@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>KuraCV - Candidate Pool</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-bright": "#f7f9fb",
+                      "on-error-container": "#93000a",
+                      "surface-dim": "#d8dadc",
+                      "surface": "#f7f9fb",
+                      "surface-tint": "#206962",
+                      "surface-container": "#eceef0",
+                      "inverse-surface": "#2d3133",
+                      "tertiary-fixed": "#6dfe9c",
+                      "error-container": "#ffdad6",
+                      "secondary-fixed-dim": "#3cddc7",
+                      "on-primary": "#ffffff",
+                      "on-secondary-fixed-variant": "#005047",
+                      "primary": "#00443e",
+                      "on-secondary-container": "#007165",
+                      "on-primary-fixed-variant": "#00504a",
+                      "background": "#f7f9fb",
+                      "on-secondary": "#ffffff",
+                      "on-tertiary-fixed": "#00210c",
+                      "error": "#ba1a1a",
+                      "tertiary-container": "#00602e",
+                      "primary-container": "#0d5d56",
+                      "on-primary-fixed": "#00201d",
+                      "on-primary-container": "#8fd3ca",
+                      "surface-container-high": "#e6e8ea",
+                      "on-error": "#ffffff",
+                      "secondary": "#006b5f",
+                      "surface-container-lowest": "#ffffff",
+                      "tertiary-fixed-dim": "#4de082",
+                      "primary-fixed-dim": "#8ed3ca",
+                      "outline-variant": "#bec9c6",
+                      "outline": "#6f7977",
+                      "secondary-container": "#62fae3",
+                      "inverse-primary": "#8ed3ca",
+                      "on-surface": "#191c1e",
+                      "on-secondary-fixed": "#00201c",
+                      "surface-container-highest": "#e0e3e5",
+                      "primary-fixed": "#aaf0e6",
+                      "on-surface-variant": "#3f4947",
+                      "on-background": "#191c1e",
+                      "on-tertiary-fixed-variant": "#005227",
+                      "surface-container-low": "#f2f4f6",
+                      "on-tertiary-container": "#4de082",
+                      "surface-variant": "#e0e3e5",
+                      "on-tertiary": "#ffffff",
+                      "secondary-fixed": "#62fae3",
+                      "inverse-on-surface": "#eff1f3",
+                      "tertiary": "#004620"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "stack-lg": "32px",
+                      "stack-md": "16px",
+                      "gutter": "24px",
+                      "stack-sm": "8px",
+                      "container-max": "1440px",
+                      "margin-x": "32px"
+              },
+              "fontFamily": {
+                      "mono-sm": [
+                              "Geist Mono"
+                      ],
+                      "label-md": [
+                              "Geist"
+                      ],
+                      "body-lg": [
+                              "Geist"
+                      ],
+                      "headline-md": [
+                              "Geist"
+                      ],
+                      "display-lg": [
+                              "Geist"
+                      ],
+                      "headline-sm": [
+                              "Geist"
+                      ],
+                      "headline-lg": [
+                              "Geist"
+                      ],
+                      "body-md": [
+                              "Geist"
+                      ],
+                      "headline-lg-mobile": [
+                              "Geist"
+                      ]
+              },
+              "fontSize": {
+                      "mono-sm": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "28px",
+                              {
+                                      "lineHeight": "36px",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        body { font-family: 'Geist', sans-serif; background-color: #F8FAFC; }
+        .bg-gradient-turbo { background: linear-gradient(135deg, #006b5f 0%, #004620 100%); }
+        .glow-focus:focus-within { box-shadow: 0 0 0 2px rgba(98, 250, 227, 0.2); border-color: #00443e; }
+        .row-hover:hover { background-color: #f2f4f6; }
+        /* Custom scrollbar for dense data areas */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #bec9c6; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6f7977; }
+    </style>
+</head>
+<body class="text-on-background bg-background flex min-h-screen">
+<!-- SideNavBar (Shared Component) -->
+<nav class="bg-surface-container dark:bg-surface-container-high text-primary dark:text-primary-fixed font-label-md text-label-md docked left-0 h-full w-[280px] border-r border-outline-variant dark:border-outline flat no shadows fixed left-0 top-0 h-screen flex flex-col p-stack-md gap-stack-sm z-20">
+<!-- Header -->
+<div class="flex items-center gap-3 px-3 py-4 mb-6">
+<div class="w-10 h-10 rounded-lg bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+</div>
+<div>
+<h1 class="font-headline-sm text-headline-sm font-black text-primary dark:text-primary-fixed">KuraCV</h1>
+<p class="font-label-md text-label-md text-on-surface-variant">AI Curation Engine</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex flex-col gap-1 flex-grow">
+<!-- Inactive Tab -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-surface-bright dark:hover:bg-surface-container-highest transition-all" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<!-- Inactive Tab -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-surface-bright dark:hover:bg-surface-container-highest transition-all" href="#">
+<span class="material-symbols-outlined">work</span>
+                Job Listings
+            </a>
+<!-- Active Tab: Candidate Pool -->
+<a class="flex items-center gap-3 px-4 py-3 bg-secondary-container dark:bg-primary-container text-on-secondary-container dark:text-on-primary-container rounded-xl font-bold transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">groups</span>
+                Candidate Pool
+            </a>
+<!-- Inactive Tab -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl text-on-surface-variant dark:text-surface-variant hover:text-primary dark:hover:text-primary-fixed hover:bg-surface-bright dark:hover:bg-surface-container-highest transition-all mt-auto" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+</div>
+<!-- CTA -->
+<button class="mt-4 w-full py-3 px-4 bg-primary text-on-primary rounded-xl font-label-md text-label-md font-bold hover:bg-surface-tint transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">add</span>
+            Create New Job
+        </button>
+</nav>
+<!-- Main Content Area -->
+<div class="ml-[280px] flex-1 min-w-0 flex flex-col min-h-screen relative">
+<!-- TopAppBar (Shared Component) -->
+<header class="bg-surface-container-lowest dark:bg-on-background text-primary dark:text-primary-fixed font-body-md text-body-md docked full-width top-0 border-b border-outline-variant dark:border-outline flat no shadows flex justify-between items-center px-margin-x h-16 w-full sticky top-0 z-10">
+<!-- Left: Search (from JSON config "search_bar": "on_left") -->
+<div class="flex-grow max-w-md">
+<div class="relative flex items-center glow-focus rounded-lg bg-surface-container-low border border-outline-variant transition-colors">
+<span class="material-symbols-outlined absolute left-3 text-outline">search</span>
+<input class="w-full bg-transparent border-none focus:ring-0 py-2 pl-10 pr-4 font-body-md text-body-md text-on-surface placeholder-outline rounded-lg outline-none" placeholder="Global search candidates..." type="text"/>
+<div class="absolute right-2 px-1.5 py-0.5 rounded border border-outline-variant text-outline font-mono-sm text-[10px]">⌘K</div>
+</div>
+</div>
+<!-- Right: Actions & Profile -->
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors scale-95 active:scale-100 relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-surface-container-lowest"></span>
+</button>
+<button class="p-2 rounded-full text-on-surface-variant hover:bg-surface-container-high transition-colors scale-95 active:scale-100">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+</div>
+<div class="h-8 w-px bg-outline-variant mx-2"></div>
+<div class="flex items-center gap-3 cursor-pointer hover:bg-surface-container-high p-1.5 rounded-lg transition-colors">
+<div class="text-right hidden md:block">
+<p class="font-label-md text-label-md font-bold text-on-surface">Alex Mercer</p>
+<p class="font-body-md text-[11px] text-on-surface-variant leading-none">Senior Recruiter</p>
+</div>
+<img alt="Recruiter profile photo" class="w-9 h-9 rounded-full object-cover border border-outline-variant" data-alt="A close-up, professional headshot of a modern corporate recruiter in a well-lit office setting. The lighting is soft and natural, emphasizing a clean, approachable, and competent aesthetic consistent with a high-end corporate platform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFIow-VcrJb91x5LPGnuuG7i1oCvVoA1ZVIWrAgiNqywvjMWhq-e0DRBsIlAcQI_0dSyboHKFG40Gj1sqVdeYr_Py-Eo-_wvM-GfzbGBEbfzMcYDmCoLt3HNYegN4UiA_qWrHRvChwt7y_gRX_JoHKVJNhms12lgI98MVnRN_Xbo4kbl1O8jSSJNbd62H7vzZSCmjkB9-OZSuANLiiuHxSPdDdzre3oXTMr7mtEr7kbz_uax3fA3mVzi47fia_V5RFSCKdITpiLww"/>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<main class="flex-grow p-gutter flex gap-6 overflow-hidden h-[calc(100vh-64px)]">
+<!-- Left Column: Data Grid & Controls (Takes up remaining space) -->
+<div class="flex-1 min-w-0 flex flex-col bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+<!-- Toolbar Area -->
+<div class="p-4 border-b border-outline-variant bg-surface-bright flex justify-between items-center">
+<!-- Batch Actions -->
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2 px-3 py-1.5 bg-surface-container rounded-lg border border-outline-variant">
+<input class="rounded border-outline-variant text-primary focus:ring-primary w-4 h-4 cursor-pointer" id="selectAll" type="checkbox"/>
+<label class="font-label-md text-label-md text-on-surface cursor-pointer" for="selectAll">Select All</label>
+</div>
+<div class="h-6 w-px bg-outline-variant mx-1"></div>
+<button class="flex items-center gap-2 px-3 py-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container-high rounded-lg transition-colors font-label-md text-label-md disabled:opacity-50">
+<span class="material-symbols-outlined text-[18px]">person_add</span>
+                            Invite
+                        </button>
+<button class="flex items-center gap-2 px-3 py-1.5 text-on-surface-variant hover:text-primary hover:bg-surface-container-high rounded-lg transition-colors font-label-md text-label-md disabled:opacity-50">
+<span class="material-symbols-outlined text-[18px]">sell</span>
+                            Tag
+                        </button>
+</div>
+<!-- Filters -->
+<div class="flex items-center gap-2">
+<button class="flex items-center gap-2 px-3 py-1.5 border border-outline-variant rounded-lg font-label-md text-label-md text-on-surface hover:bg-surface-container-low transition-colors bg-surface-container-lowest">
+<span class="material-symbols-outlined text-[16px]">filter_list</span>
+                            Filter By
+                        </button>
+<button class="flex items-center gap-1 px-3 py-1.5 border border-outline-variant rounded-lg font-label-md text-label-md text-primary bg-secondary-container bg-opacity-20 hover:bg-opacity-30 transition-colors">
+                            Skills: React
+                            <span class="material-symbols-outlined text-[14px]">close</span>
+</button>
+</div>
+</div>
+<!-- High-Density Data Table Header -->
+<div class="grid grid-cols-[40px_minmax(250px,1fr)_minmax(200px,2fr)_100px_100px_40px] gap-4 px-4 py-3 border-b border-outline-variant bg-surface-container-low font-label-md text-label-md text-on-surface-variant uppercase tracking-wider text-[10px]">
+<div class="flex items-center justify-center"></div>
+<div>Candidate</div>
+<div>Top Skills</div>
+<div class="text-center">AI Match</div>
+<div>Status</div>
+<div></div>
+</div>
+<!-- Scrollable Table Body -->
+<div class="flex-grow overflow-y-auto bg-surface-container-lowest">
+<!-- Row 1: Selected/Active -->
+<div class="grid grid-cols-[40px_minmax(250px,1fr)_minmax(200px,2fr)_100px_100px_40px] gap-4 px-4 py-3 border-b border-outline-variant row-hover items-center bg-secondary-container bg-opacity-[0.05] relative">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-secondary"></div>
+<div class="flex items-center justify-center">
+<input checked="" class="rounded border-outline-variant text-primary focus:ring-primary w-4 h-4 cursor-pointer" type="checkbox"/>
+</div>
+<div class="flex items-center gap-3">
+<img alt="Candidate avatar" class="w-10 h-10 rounded-full object-cover border border-outline-variant" data-alt="A professional headshot of a female software engineer with a confident expression, set against a clean, blurred office background. The lighting is bright and modern, fitting a high-quality professional networking profile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnEQemJtqzP6GDMBkecrUNzv7j005MlsANzbT9GxSsfqDLXmhFqwo_MPvMgHzUuD3cBGRybQJrnB28z85e4AIcS3_mwoVSb7Slm6NDMbSeUopKtgcV6YcrhtUYDmvrF31eDHiLQ6SO-2MslmDMIUNPR-00JErN9FE6SjDKJR5B7Bxv2xhI0bqA55kVhzmift_zCBpJ1r6zb3PPHXMIF-p7euHm93dDONtTZeRx3Jx-pbOIEHQpPmuC52x0ZZ2_ugckQGFI-Nj_sQo"/>
+<div>
+<h3 class="font-label-md text-label-md font-bold text-on-surface">Sarah Jenkins</h3>
+<p class="font-body-md text-[12px] text-on-surface-variant">Senior Frontend Dev at TechFlow</p>
+</div>
+</div>
+<div class="flex flex-wrap gap-1.5 items-center">
+<span class="px-2 py-0.5 rounded-full bg-primary text-on-primary font-mono-sm text-[10px] border border-primary-container">React</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-mono-sm text-[10px] border border-outline-variant">TypeScript</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-mono-sm text-[10px] border border-outline-variant">GraphQL</span>
+<span class="text-on-surface-variant font-label-md text-[10px] ml-1">+3</span>
+</div>
+<div class="flex justify-center items-center">
+<div class="relative w-10 h-10 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 36 36">
+<path class="text-surface-variant" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+<path class="text-secondary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="92, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<span class="absolute font-label-md text-[10px] font-bold text-primary">92%</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 rounded-full bg-tertiary-fixed shadow-[0_0_4px_rgba(109,254,156,0.8)]"></div>
+<span class="font-label-md text-[11px] text-on-surface">Available</span>
+</div>
+<div class="flex justify-end">
+<button class="text-outline hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="grid grid-cols-[40px_minmax(250px,1fr)_minmax(200px,2fr)_100px_100px_40px] gap-4 px-4 py-3 border-b border-outline-variant row-hover items-center">
+<div class="flex items-center justify-center">
+<input class="rounded border-outline-variant text-primary focus:ring-primary w-4 h-4 cursor-pointer" type="checkbox"/>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant flex items-center justify-center font-headline-sm text-on-surface-variant">
+                                MC
+                            </div>
+<div>
+<h3 class="font-label-md text-label-md font-bold text-on-surface">Michael Chen</h3>
+<p class="font-body-md text-[12px] text-on-surface-variant">Full Stack Engineer</p>
+</div>
+</div>
+<div class="flex flex-wrap gap-1.5 items-center">
+<span class="px-2 py-0.5 rounded-full bg-primary text-on-primary font-mono-sm text-[10px] border border-primary-container">React</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-mono-sm text-[10px] border border-outline-variant">Node.js</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-mono-sm text-[10px] border border-outline-variant">AWS</span>
+</div>
+<div class="flex justify-center items-center">
+<div class="relative w-10 h-10 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 36 36">
+<path class="text-surface-variant" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+<path class="text-secondary" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="85, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<span class="absolute font-label-md text-[10px] font-bold text-primary">85%</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 rounded-full bg-outline"></div>
+<span class="font-label-md text-[11px] text-on-surface-variant">Passive</span>
+</div>
+<div class="flex justify-end">
+<button class="text-outline hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
+</div>
+</div>
+<!-- Additional Rows (Simulated density) -->
+<div class="grid grid-cols-[40px_minmax(250px,1fr)_minmax(200px,2fr)_100px_100px_40px] gap-4 px-4 py-3 border-b border-outline-variant row-hover items-center opacity-70">
+<div class="flex items-center justify-center">
+<input class="rounded border-outline-variant text-primary focus:ring-primary w-4 h-4 cursor-pointer" type="checkbox"/>
+</div>
+<div class="flex items-center gap-3">
+<img alt="Candidate avatar" class="w-10 h-10 rounded-full object-cover border border-outline-variant grayscale" data-alt="A black and white portrait of a male professional looking slightly off-camera. The lighting is cinematic and focused on the face, creating a serious and contemplative mood against a dark background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD88wIt4KVgg-SxyxGuSugj5e8IBhjDDO3VqO_1Q_biY-JYrFwm2UocfvYKPLNPKK4DLv0VuaKw8dn3UuSjnCL3pvlKB6_SicvIyT2ClVAgzoRVqya2k6wV9_Jx79FIZRP81hZCP7M-R9zXVXtmgeEyQly5mOMKbh1BYHBQVZViE1iszl7mAMhhk8WtLcd1OG462CbJXVvAhgjVrEQgJGwKw04sLIHzKEVx0nxw7-qmad3IBpgkbHbV7cX--beftnix4gi_1YdIhVU"/>
+<div>
+<h3 class="font-label-md text-label-md font-bold text-on-surface">David Ross</h3>
+<p class="font-body-md text-[12px] text-on-surface-variant">UI Developer</p>
+</div>
+</div>
+<div class="flex flex-wrap gap-1.5 items-center">
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-mono-sm text-[10px] border border-outline-variant">Vue.js</span>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface font-mono-sm text-[10px] border border-outline-variant">CSS</span>
+</div>
+<div class="flex justify-center items-center">
+<div class="relative w-10 h-10 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 36 36">
+<path class="text-surface-variant" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+<path class="text-outline" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="60, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<span class="absolute font-label-md text-[10px] font-bold text-outline">60%</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 rounded-full bg-outline"></div>
+<span class="font-label-md text-[11px] text-on-surface-variant">Passive</span>
+</div>
+<div class="flex justify-end">
+<button class="text-outline hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
+</div>
+</div>
+</div>
+<!-- Pagination Footer -->
+<div class="p-3 border-t border-outline-variant bg-surface-bright flex justify-between items-center text-on-surface-variant font-label-md text-[12px]">
+<span>Showing 1-24 of 1,204 candidates</span>
+<div class="flex items-center gap-1">
+<button class="p-1 rounded hover:bg-surface-container transition-colors disabled:opacity-50" disabled=""><span class="material-symbols-outlined text-[18px]">chevron_left</span></button>
+<button class="w-7 h-7 rounded bg-primary text-on-primary font-bold flex items-center justify-center">1</button>
+<button class="w-7 h-7 rounded hover:bg-surface-container transition-colors flex items-center justify-center">2</button>
+<button class="w-7 h-7 rounded hover:bg-surface-container transition-colors flex items-center justify-center">3</button>
+<span class="px-1">...</span>
+<button class="p-1 rounded hover:bg-surface-container transition-colors"><span class="material-symbols-outlined text-[18px]">chevron_right</span></button>
+</div>
+</div>
+</div>
+<!-- Right Column: Candidate Preview (Simulated 'Dark Mode' Header panel) -->
+<aside class="w-[380px] bg-surface-container-lowest border border-outline-variant rounded-xl flex flex-col overflow-hidden shadow-[0_4px_24px_rgba(0,107,95,0.08)] flex-shrink-0 relative">
+<!-- Dark Mode Header for Focus -->
+<div class="bg-inverse-surface text-inverse-on-surface p-6 relative">
+<!-- Close button -->
+<button class="absolute top-4 right-4 text-outline-variant hover:text-white transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+<div class="flex flex-col items-center text-center mt-2">
+<div class="relative">
+<img alt="Sarah Jenkins" class="w-20 h-20 rounded-full object-cover border-2 border-secondary-fixed" data-alt="A professional headshot of a female software engineer with a confident expression, set against a clean, blurred office background. The lighting is bright and modern, fitting a high-quality professional networking profile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGeBbYSirt6U7yEt3DS_foEIFobFUE-hIse3SsWP7tKnf0se-ZCUUKx6VD6ClokcrCExZw9jLlNVHM04nZqBSVcdwNGQTDbrYR9hIuCMSoKFjxJg94PgMbb4n0dY85OgLRsUIKs317hila39r-FkvhFNRBUhSVdPO7ocrESe_OxbkHGkPX7eT4YcNzaqQWKEL8RRVGAz3zS__aSgQq6baZvWNy1pgBwY-cMWjgtsQB1E6rlbgSpU4xZEm5M-wzxMxhq-WcVzjiOKU"/>
+<!-- Status Indicator -->
+<div class="absolute bottom-1 right-1 w-4 h-4 rounded-full bg-tertiary-fixed border-2 border-inverse-surface shadow-[0_0_8px_rgba(109,254,156,0.6)]"></div>
+</div>
+<h2 class="font-headline-md text-headline-md mt-4 text-white">Sarah Jenkins</h2>
+<p class="font-body-md text-body-md text-outline-variant mt-1 flex items-center gap-1 justify-center">
+<span class="material-symbols-outlined text-[16px]">location_on</span>
+                            San Francisco, CA
+                        </p>
+</div>
+<!-- AI Turbo Action -->
+<button class="w-full mt-6 py-2.5 rounded-lg bg-gradient-turbo text-white font-label-md text-label-md font-bold flex items-center justify-center gap-2 shadow-[0_4px_12px_rgba(0,107,95,0.3)] hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">bolt</span>
+                        Auto-Draft Outreach
+                    </button>
+</div>
+<!-- Preview Content Body -->
+<div class="p-6 flex-grow overflow-y-auto bg-surface-container-lowest flex flex-col gap-6">
+<!-- AI Summary Box -->
+<div class="relative p-4 border border-secondary-container rounded-xl bg-surface-bright">
+<div class="absolute -top-3 left-4 bg-surface-container-lowest px-2 flex items-center gap-1 text-primary font-label-md text-[10px] font-bold tracking-wider">
+<span class="material-symbols-outlined text-[14px]">auto_awesome</span>
+                            KuraCV AI Insights
+                        </div>
+<p class="font-body-md text-[13px] text-on-surface-variant leading-relaxed">
+                            Sarah is a highly matched candidate (92%) due to her extensive 5-year background in React and modern front-end architectures. Her recent project leading a migration to Next.js perfectly aligns with our current tech debt initiatives.
+                        </p>
+</div>
+<!-- Match Breakdown -->
+<div>
+<h4 class="font-label-md text-label-md text-on-surface font-bold uppercase tracking-wider mb-3">Requirement Match</h4>
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-center text-[12px]">
+<span class="text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-secondary">check_circle</span> Frontend Architecture</span>
+<span class="font-mono-sm text-primary">Strong</span>
+</div>
+<div class="flex justify-between items-center text-[12px]">
+<span class="text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-secondary">check_circle</span> Team Leadership</span>
+<span class="font-mono-sm text-primary">Moderate</span>
+</div>
+<div class="flex justify-between items-center text-[12px]">
+<span class="text-on-surface-variant flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-outline">radio_button_unchecked</span> GraphQL Exp.</span>
+<span class="font-mono-sm text-outline">Partial</span>
+</div>
+</div>
+</div>
+<!-- Work History Snippet -->
+<div>
+<h4 class="font-label-md text-label-md text-on-surface font-bold uppercase tracking-wider mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">work_history</span>
+                            Recent Experience
+                        </h4>
+<div class="relative pl-4 border-l border-outline-variant flex flex-col gap-4">
+<div class="relative">
+<div class="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-outline-variant border-2 border-surface-container-lowest"></div>
+<h5 class="font-label-md text-[13px] font-bold text-on-surface">Senior Frontend Dev</h5>
+<p class="font-body-md text-[11px] text-on-surface-variant">TechFlow • 2021 - Present</p>
+</div>
+<div class="relative">
+<div class="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-outline-variant border-2 border-surface-container-lowest"></div>
+<h5 class="font-label-md text-[13px] font-bold text-on-surface">UI Engineer</h5>
+<p class="font-body-md text-[11px] text-on-surface-variant">CloudNova • 2018 - 2021</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="p-4 border-t border-outline-variant bg-surface-bright flex gap-2">
+<button class="flex-1 py-2 px-4 border border-primary text-primary rounded-lg font-label-md text-[12px] font-bold hover:bg-surface-container-low transition-colors">
+                        View Full CV
+                    </button>
+<button class="py-2 px-3 border border-outline-variant text-on-surface-variant rounded-lg hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[18px]">bookmark_border</span>
+</button>
+</div>
+</aside>
+</main>
+</div>
+</body></html>
