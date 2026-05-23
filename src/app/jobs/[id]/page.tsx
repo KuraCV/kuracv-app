@@ -414,9 +414,9 @@ export default function JobDetailsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {jobStats ? [
           { label: "Total Candidates", key: "total_candidates" },
-          { label: "Meet Criteria", key: "meet_criteria" },
-          { label: "Considerable", key: "considerable" },
-          { label: "Failed", key: "failed" },
+          { label: "Meet Criteria", key: "Meet Criteria" },
+          { label: "Considerable", key: "Considerable" },
+          { label: "Failed", key: "Failed" },
         ].map((stat, i) => {
           const statData = jobStats[stat.key];
           const count = statData?.count || 0;
