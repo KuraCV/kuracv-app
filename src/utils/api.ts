@@ -4,7 +4,9 @@
  * and automatic 401 Unauthorized token refreshing.
  */
 
-export const BASE_URL = "https://kuracv-service-207878771603.asia-southeast2.run.app";
+export const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? (() => {
+  throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined. Add it to .env.local.");
+})();
 
 // Helper to determine if code is running on the client side
 const isClient = () => typeof window !== "undefined";
