@@ -30,7 +30,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
-        <script src="/config.js"></script>
+        {process.env.NODE_ENV === "production" && <script src="/config.js"></script>}
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <AuthProvider>{children}</AuthProvider>

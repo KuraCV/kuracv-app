@@ -300,6 +300,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         authError,
         login,
+        loginWithGoogle,
         register,
         logout,
         clearError,

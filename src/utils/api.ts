@@ -5,7 +5,7 @@
  */
 
 // Get API base URL dynamically to support both runtime and build-time config
-function getBaseUrl(): string {
+export function BASE_URL(): string {
   if (typeof window !== "undefined") {
     // Client-side: try runtime config first (from config.js in Docker), then env var
     const url =
@@ -18,8 +18,6 @@ function getBaseUrl(): string {
   // Server-side: use build-time env var or default
   return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 }
-
-export const BASE_URL = getBaseUrl();
 
 // Helper to determine if code is running on the client side
 const isClient = () => typeof window !== "undefined";
@@ -61,7 +59,7 @@ function onRefreshed(token: string) {
  * Perform a token refresh operation
  */
 async function performTokenRefresh(refreshToken: string): Promise<string> {
-  const response = await fetch(`${BASE_URL}/api/accounts/token/refresh/`, {
+  const response = await fetch(`${BASE_URL()}/api/accounts/token/refresh/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -85,7 +83,7 @@ async function performTokenRefresh(refreshToken: string): Promise<string> {
  * Standard fetch wrapper for KuraCV API
  */
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const url = path.startsWith("http") ? path : `${BASE_URL}${path}`;
+  const url = path.startsWith("http") ? path : `${BASE_URL()}${path}`;
 
   // Clone options and headers so we don't modify the caller's arguments
   const requestOptions: RequestInit = { ...options };
