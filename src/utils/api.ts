@@ -4,9 +4,8 @@
  * and automatic 401 Unauthorized token refreshing.
  */
 
-export const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? (() => {
-  throw new Error("NEXT_PUBLIC_API_BASE_URL is not defined. Add it to .env.local.");
-})();
+// Use a default value for build time, but client will use the actual env var
+export const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 // Helper to determine if code is running on the client side
 const isClient = () => typeof window !== "undefined";
