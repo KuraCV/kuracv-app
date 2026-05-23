@@ -19,6 +19,8 @@ export default function JobDetailsPage() {
   const [activeTab, setActiveTab] = useState("candidates");
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isSavingJob, setIsSavingJob] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   
   // Editable baseline requirements state
   const [requirementsVal, setRequirementsVal] = useState("");
@@ -73,6 +75,8 @@ export default function JobDetailsPage() {
   };
 
   const handleSaveJob = async (updatedPayload: any) => {
+    setIsSavingJob(true);
+    setSaveFeedback(null);
     try {
       const updated: any = await apiFetch(`/api/jobs/${jobId}/`, {
         method: "PUT",
@@ -83,14 +87,22 @@ export default function JobDetailsPage() {
           employment_type: updatedPayload.employment_type,
           status: updatedPayload.status,
           requirements: updatedPayload.requirements,
-          application_link: updatedPayload.application_link,
+          form_link: updatedPayload.form_link,
         }),
       });
       setJob(updated);
       setRequirementsVal(updated.requirements || "");
+      setIsEditModalOpen(false);
+      setSaveFeedback({ type: "success", message: "Job details updated successfully!" });
+      setTimeout(() => setSaveFeedback(null), 3000);
     } catch (err) {
       console.error("Failed to save changes:", err);
-      alert("Failed to save job modifications.");
+      setSaveFeedback({ 
+        type: "error", 
+        message: err instanceof ApiError ? err.data.detail || "Failed to save job modifications." : "Failed to save job modifications." 
+      });
+    } finally {
+      setIsSavingJob(false);
     }
   };
 
@@ -114,11 +126,11 @@ export default function JobDetailsPage() {
   };
 
   const handleCopyLink = () => {
-    if (!job?.application_link) {
+    if (!job?.form_link) {
       alert("No application link specified for this job.");
       return;
     }
-    navigator.clipboard.writeText(job.application_link);
+    navigator.clipboard.writeText(job.form_link);
     alert("Application link copied to clipboard!");
   };
 
@@ -391,9 +403,9 @@ export default function JobDetailsPage() {
               </div>
 
               <h3 className="text-lg font-bold text-slate-800 mb-3">Application Form Link</h3>
-              {job.application_link ? (
+              {job.form_link ? (
                 <div className="bg-[#F1F5F9] border border-[#CBD5E1] rounded-md px-4 py-3 flex items-center justify-between w-full max-w-xl shadow-sm">
-                  <span className="text-slate-600 text-sm truncate mr-4">{job.application_link}</span>
+                  <span className="text-slate-600 text-sm truncate mr-4">{job.form_link}</span>
                   <button 
                     onClick={handleCopyLink}
                     className="text-primary hover:text-primary/80 font-bold text-sm flex items-center gap-1 cursor-pointer border-none bg-transparent"
@@ -497,10 +509,31 @@ export default function JobDetailsPage() {
           type: job.employment_type || job.type,
           status: job.status,
           requirements: job.requirements,
-          application_link: job.application_link,
+          form_link: job.form_link,
         }}
         onSave={handleSaveJob}
+        isSaving={isSavingJob}
       />
+
+      {/* Success/Error Feedback */}
+      {saveFeedback && (
+        <div className={`fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-lg animate-in slide-in-from-bottom-5 duration-300 flex items-center gap-3 ${
+          saveFeedback.type === "success" 
+            ? "bg-green-50 border border-green-200 text-green-800" 
+            : "bg-red-50 border border-red-200 text-red-800"
+        }`}>
+          {saveFeedback.type === "success" ? (
+            <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+          )}
+          <p className="font-medium">{saveFeedback.message}</p>
+        </div>
+      )}
     </AppLayout>
   );
 }

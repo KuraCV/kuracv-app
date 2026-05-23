@@ -40,7 +40,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobCreated }: Create
           employment_type: type,
           status: status,
           requirements: requirements,
-          application_link: appLink,
+          form_link: appLink,
         }),
       });
 

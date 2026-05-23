@@ -13,19 +13,20 @@ interface EditJobModalProps {
     employment_type?: string;
     status: string;
     requirements?: string;
-    application_link?: string;
+    form_link?: string;
   };
   onSave: (updatedJob: any) => void;
+  isSaving?: boolean;
 }
 
-export default function EditJobModal({ isOpen, onClose, job, onSave }: EditJobModalProps) {
+export default function EditJobModal({ isOpen, onClose, job, onSave, isSaving }: EditJobModalProps) {
   const [jobTitle, setJobTitle] = useState(job.title);
   const [department, setDepartment] = useState(job.department);
   const [location, setLocation] = useState(job.location || job.location_model || "Remote");
   const [type, setType] = useState(job.type || job.employment_type || "Full-time");
   const [status, setStatus] = useState(job.status);
   const [requirements, setRequirements] = useState(job.requirements || "");
-  const [appLink, setAppLink] = useState(job.application_link || "");
+  const [appLink, setAppLink] = useState(job.form_link || "");
 
   // Sync state with job prop when modal opens or job prop changes
   useEffect(() => {
@@ -35,7 +36,7 @@ export default function EditJobModal({ isOpen, onClose, job, onSave }: EditJobMo
     setType(job.type || job.employment_type || "Full-time");
     setStatus(job.status || "Active");
     setRequirements(job.requirements || "");
-    setAppLink(job.application_link || "");
+    setAppLink(job.form_link || "");
   }, [job, isOpen]);
 
   if (!isOpen) return null;
@@ -51,7 +52,7 @@ export default function EditJobModal({ isOpen, onClose, job, onSave }: EditJobMo
       type,
       status,
       requirements,
-      application_link: appLink,
+      form_link: appLink,
     });
     onClose();
   };
@@ -196,16 +197,25 @@ export default function EditJobModal({ isOpen, onClose, job, onSave }: EditJobMo
           <button 
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-[#475569] hover:bg-slate-50 rounded-md transition-colors cursor-pointer"
+            disabled={isSaving}
+            className="px-4 py-2 text-sm font-medium text-[#475569] hover:bg-slate-50 rounded-md transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button 
             type="submit"
             form="edit-job-form"
-            className="px-6 py-2 text-sm font-medium bg-primary text-white rounded-md shadow-sm hover:bg-primary/90 transition-colors cursor-pointer"
+            disabled={isSaving}
+            className="px-6 py-2 text-sm font-medium bg-primary text-white rounded-md shadow-sm hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
-            Save Changes
+            {isSaving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Saving...
+              </>
+            ) : (
+              "Save Changes"
+            )}
           </button>
         </div>
 
