@@ -22,6 +22,16 @@ export default function JobDetailsPage() {
   const [isSavingJob, setIsSavingJob] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   
+  // Applicants state
+  const [applicants, setApplicants] = useState<any[]>([]);
+  const [isLoadingApplicants, setIsLoadingApplicants] = useState<boolean>(false);
+  
+  // Email generation state
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [emailBody, setEmailBody] = useState("");
+  const [isGeneratingEmail, setIsGeneratingEmail] = useState(false);
+  const [emailCopied, setEmailCopied] = useState(false);
+  
   // Editable baseline requirements state
   const [requirementsVal, setRequirementsVal] = useState("");
 
@@ -40,9 +50,65 @@ export default function JobDetailsPage() {
     }
   };
 
+  const fetchApplicants = async () => {
+    if (!jobId) return;
+    setIsLoadingApplicants(true);
+    try {
+      const response: any = await apiFetch(`/api/applicants/job/${jobId}/`);
+      const applicantsList = response.applicants || [];
+      console.log("Fetched applicants:", applicantsList);
+      setApplicants(applicantsList);
+    } catch (err) {
+      console.error("Failed to load applicants:", err);
+      // Don't set error for applicants - it's secondary data
+    } finally {
+      setIsLoadingApplicants(false);
+    }
+  };
+
+  const handleGenerateEmail = async () => {
+    if (!selectedCandidate || !job) return;
+    setIsGeneratingEmail(true);
+    setEmailCopied(false);
+    try {
+      const response: any = await apiFetch(`/api/applicants/email/send/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: selectedCandidate.name,
+          job_title: job.title,
+          summary: selectedCandidate.aiSummary,
+        }),
+      });
+      setEmailBody(response.email_body || "");
+      setIsEmailModalOpen(true);
+    } catch (err) {
+      console.error("Failed to generate email:", err);
+      alert("Failed to generate email. Please try again.");
+    } finally {
+      setIsGeneratingEmail(false);
+    }
+  };
+
+  const handleCopyEmail = () => {
+    navigator.clipboard.writeText(emailBody);
+    setEmailCopied(true);
+    setTimeout(() => setEmailCopied(false), 2000);
+  };
+
+  const handleSendEmail = () => {
+    if (selectedCandidate.email) {
+      const subject = `Application Status - ${job?.title || "Job Position"}`;
+      const mailtoLink = `mailto:${selectedCandidate.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+      window.location.href = mailtoLink;
+      setIsEmailModalOpen(false);
+    }
+  };
+
   useEffect(() => {
     if (jobId) {
       fetchJobDetails();
+      fetchApplicants();
     }
   }, [jobId]);
 
@@ -143,14 +209,30 @@ export default function JobDetailsPage() {
     }
   };
 
-  // Mock candidates database mapping for simulation pipeline
-  const candidates = [
-    { id: 1, name: "Marcus Thorne", role: job?.title || "Applicant", match: 84, status: "Meet Criteria", date: "Oct 25", avatar: "https://i.pravatar.cc/150?u=marcus", aiSummary: "Marcus has extensive experience with React and Tailwind, but his background is primarily in e-commerce rather than fintech. He lacks direct experience with Next.js but shows a strong capacity for learning new frameworks.", skills: [{name: "React", matched: true}, {name: "Tailwind CSS", matched: true}, {name: "Agile", matched: false}, {name: "TypeScript", matched: true}] },
-    { id: 2, name: "Jordan Smith", role: job?.title || "Applicant", match: 42, status: "Failed", date: "Oct 24", avatar: null, aiSummary: "Jordan is a recent bootcamp graduate with a strong portfolio in basic HTML/CSS, but lacks the required 3+ years of professional React experience and enterprise-level architecture knowledge.", skills: [{name: "HTML5", matched: false}, {name: "CSS3", matched: false}, {name: "JavaScript", matched: false}, {name: "Tailwind", matched: false}] },
-    { id: 3, name: "Emma Davis", role: job?.title || "Applicant", match: 91, status: "Meet Criteria", date: "Oct 25", avatar: null, aiSummary: "Emma is a strong candidate with 6 years of experience in modern layout, TypeScript types, and cross-functional teams.", skills: [{name: "React", matched: true}, {name: "Node.js", matched: true}, {name: "TypeScript", matched: true}] },
-    { id: 4, name: "Michael Chen", role: job?.title || "Applicant", match: 76, status: "Considerable", date: "Oct 23", avatar: null, aiSummary: "Michael has solid React experience but lacks large-scale framework deployment.", skills: [{name: "React", matched: true}, {name: "CSS", matched: false}, {name: "Redux", matched: true}] },
-    { id: 5, name: "James Brown", role: job?.title || "Applicant", match: 65, status: "Considerable", date: "Oct 20", avatar: null, aiSummary: "James is primarily a backend engineer with basic HTML layout knowledge.", skills: [{name: "Python", matched: false}, {name: "JavaScript", matched: true}] },
-  ];
+  // Map API applicants to display format
+  const candidates = applicants.map((applicant: any, idx: number) => {
+    const statusMap: { [key: string]: string } = {
+      "Meet Criteria": "Meet Criteria",
+      "Considerable": "Considerable",
+      "Failed": "Failed",
+    };
+    return {
+      id: idx,
+      name: applicant.name,
+      email: applicant.email,
+      role: job?.title || "Applicant",
+      match: applicant.match_percentage || 0,
+      status: statusMap[applicant.status] || applicant.status || "Pending",
+      date: applicant.created_at ? new Date(applicant.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "N/A",
+      avatar: null,
+      aiSummary: applicant.summary || "Awaiting summary.",
+      skills: (applicant.skills || []).map((skill: any) => ({
+        name: typeof skill === "string" ? skill : skill.name,
+        matched: true,
+      })),
+      cv_url: applicant.cv_url,
+    };
+  });
 
   const isSuccess = selectedCandidate?.status === "Meet Criteria" || selectedCandidate?.status === "Considerable";
 
@@ -299,63 +381,85 @@ export default function JobDetailsPage() {
         <div className="p-0 flex-1">
           {activeTab === "candidates" && (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-white">
-                    <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Candidate Name</th>
-                    <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">AI Match Score</th>
-                    <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Current Role</th>
-                    <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Applied Date</th>
-                    <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {candidates.map((c) => (
-                    <tr key={c.id} className="hover:bg-[#F0FDF4] transition-colors cursor-pointer bg-white group">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-[#F1F5F9] border border-slate-200 flex items-center justify-center text-[#475569] font-bold text-sm">
-                            {c.name.charAt(0)}
-                          </div>
-                          <span className="font-semibold text-slate-800">{c.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-full bg-slate-100 rounded-full h-2 max-w-[120px] overflow-hidden">
-                            <div className={`h-2 rounded-full ${c.match > 85 ? 'bg-[#5EEAD4]' : c.match > 70 ? 'bg-amber-400' : 'bg-rose-400'}`} style={{ width: `${c.match}%` }}></div>
-                          </div>
-                          <span className="text-sm font-bold text-slate-700 w-8">{c.match}%</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-600 font-medium">{c.role}</td>
-                      <td className="px-6 py-4">
-                        <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${
-                          c.status === 'Meet Criteria' ? 'bg-[#E6F4F1] text-[#0F766E]' :
-                          c.status === 'Considerable' ? 'bg-amber-100 text-amber-700' :
-                          'bg-rose-100 text-rose-700'
-                        }`}>
-                          {c.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-500 font-medium">{c.date}</td>
-                      <td className="px-6 py-4 text-right">
-                        <button 
-                          onClick={() => setSelectedCandidate(c)}
-                          className="text-[#0F766E] hover:underline text-sm font-bold border-none bg-transparent cursor-pointer"
-                        >
-                          View Detail
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              
-              <div className="p-3 border-t border-slate-200 bg-slate-50 flex justify-between items-center text-slate-500 text-xs font-medium">
-                <span>Showing 1-5 of 5 candidates</span>
-              </div>
+              {isLoadingApplicants ? (
+                <div className="flex items-center justify-center min-h-[300px]">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-10 h-10 border-4 border-slate-200 border-t-primary rounded-full animate-spin"></div>
+                    <p className="text-sm font-medium text-slate-500">Loading applicants...</p>
+                  </div>
+                </div>
+              ) : candidates.length === 0 ? (
+                <div className="flex items-center justify-center min-h-[300px]">
+                  <div className="text-center">
+                    <svg className="w-12 h-12 text-slate-300 mx-auto mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <p className="text-slate-500 text-sm font-medium">No applicants yet</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-white">
+                        <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Candidate Name</th>
+                        <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">AI Match Score</th>
+                        <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Current Role</th>
+                        <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Applied Date</th>
+                        <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {candidates.map((c) => (
+                        <tr key={c.id} className="hover:bg-[#F0FDF4] transition-colors cursor-pointer bg-white group">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-full bg-[#F1F5F9] border border-slate-200 flex items-center justify-center text-[#475569] font-bold text-sm">
+                                {c.name.charAt(0)}
+                              </div>
+                              <span className="font-semibold text-slate-800">{c.name}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-full bg-slate-100 rounded-full h-2 max-w-[120px] overflow-hidden">
+                                <div className={`h-2 rounded-full ${c.match > 85 ? 'bg-[#5EEAD4]' : c.match > 70 ? 'bg-amber-400' : 'bg-rose-400'}`} style={{ width: `${c.match}%` }}></div>
+                              </div>
+                              <span className="text-sm font-bold text-slate-700 w-8">{c.match}%</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-600 font-medium">{c.role}</td>
+                          <td className="px-6 py-4">
+                            <span className={`text-xs font-bold px-2.5 py-1 rounded-md ${
+                              c.status === 'Meet Criteria' ? 'bg-[#E6F4F1] text-[#0F766E]' :
+                              c.status === 'Considerable' ? 'bg-amber-100 text-amber-700' :
+                              'bg-rose-100 text-rose-700'
+                            }`}>
+                              {c.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-slate-500 font-medium">{c.date}</td>
+                          <td className="px-6 py-4 text-right">
+                            <button 
+                              onClick={() => setSelectedCandidate(c)}
+                              className="text-[#0F766E] hover:underline text-sm font-bold border-none bg-transparent cursor-pointer"
+                            >
+                              View Detail
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div className="p-3 border-t border-slate-200 bg-slate-50 flex justify-between items-center text-slate-500 text-xs font-medium">
+                    <span>Showing 1-{candidates.length} of {candidates.length} applicant{candidates.length !== 1 ? "s" : ""}</span>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -481,20 +585,121 @@ export default function JobDetailsPage() {
 
             <div className="border-t border-[#E2E8F0] pt-5 grid grid-cols-2 gap-3">
               <button 
-                onClick={() => setSelectedCandidate(null)}
-                className={`w-full font-bold py-2.5 rounded-md transition-colors text-sm cursor-pointer ${isSuccess ? 'bg-[#0F766E] text-white hover:bg-[#0F766E]/90' : 'bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#334155]'}`}
+                onClick={handleGenerateEmail}
+                disabled={isGeneratingEmail}
+                className={`w-full font-bold py-2.5 rounded-md transition-colors text-sm cursor-pointer flex items-center justify-center gap-2 ${isSuccess ? 'bg-[#0F766E] text-white hover:bg-[#0F766E]/90 disabled:opacity-50' : 'bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#334155] disabled:opacity-50'}`}
               >
-                Schedule Interview
+                {isGeneratingEmail ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                      <path d="m22 6-10 7L2 6"></path>
+                    </svg>
+                    Generate Email
+                  </>
+                )}
               </button>
               <button 
-                onClick={() => setSelectedCandidate(null)}
-                className="w-full bg-white border border-[#0F766E] text-[#0F766E] hover:bg-[#F8FAFC] font-bold py-2.5 rounded-md transition-colors text-sm cursor-pointer"
+                onClick={() => {
+                  if (selectedCandidate.cv_url) {
+                    const cvUrl = `https://drive.google.com/file/d/${selectedCandidate.cv_url}/view`;
+                    window.open(cvUrl, '_blank');
+                  }
+                }}
+                disabled={!selectedCandidate.cv_url}
+                className="w-full bg-white border border-[#0F766E] text-[#0F766E] hover:bg-[#F8FAFC] font-bold py-2.5 rounded-md transition-colors text-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <path d="M9 15l3 3 5-5"></path>
+                </svg>
                 View CV
               </button>
             </div>
           </div>
           <div className="fixed inset-0 z-[-1]" onClick={() => setSelectedCandidate(null)}></div>
+        </div>
+      )}
+
+      {/* Email Modal */}
+      {isEmailModalOpen && emailBody && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-2xl rounded-xl shadow-xl overflow-hidden flex flex-col p-6 animate-in zoom-in-95 duration-200 relative max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-[#E6F4F1] flex items-center justify-center">
+                  <svg className="w-6 h-6 text-[#0F766E]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <path d="m22 6-10 7L2 6"></path>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-[#1E293B]">Email to {selectedCandidate?.name}</h3>
+                  <p className="text-[15px] text-[#64748B]">{selectedCandidate?.email}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsEmailModalOpen(false)}
+                className="text-[#94A3B8] hover:text-[#475569] transition-colors p-1"
+              >
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg p-5 mb-5 min-h-[200px] max-h-[400px] overflow-y-auto">
+              <p className="text-[15px] text-[#334155] leading-relaxed whitespace-pre-wrap font-sans">
+                {emailBody}
+              </p>
+            </div>
+
+            <div className="border-t border-[#E2E8F0] pt-5 flex gap-3">
+              <button 
+                onClick={handleCopyEmail}
+                className={`flex-1 font-bold py-2.5 rounded-md transition-colors text-sm cursor-pointer flex items-center justify-center gap-2 ${
+                  emailCopied 
+                    ? 'bg-green-100 text-green-700' 
+                    : 'bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#334155]'
+                }`}
+              >
+                {emailCopied ? (
+                  <>
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M20 6L9 17l-5-5"></path>
+                    </svg>
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                      <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                    </svg>
+                    Copy Email
+                  </>
+                )}
+              </button>
+              <button 
+                onClick={handleSendEmail}
+                className="flex-1 bg-[#0F766E] text-white hover:bg-[#0F766E]/90 font-bold py-2.5 rounded-md transition-colors text-sm cursor-pointer flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <path d="m22 6-10 7L2 6"></path>
+                </svg>
+                Send Email
+              </button>
+            </div>
+          </div>
+          <div className="fixed inset-0 z-[-1]" onClick={() => setIsEmailModalOpen(false)}></div>
         </div>
       )}
 
