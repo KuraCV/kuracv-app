@@ -4,8 +4,15 @@
  * and automatic 401 Unauthorized token refreshing.
  */
 
-// Use a default value for build time, but client will use the actual env var
-export const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+// Get API base URL from runtime config (client-side) or env var (build-time/server-side)
+export const BASE_URL = (() => {
+  if (typeof window !== "undefined") {
+    // Client-side: use the runtime config loaded from config.js
+    return (window as any).__API_BASE_URL || "http://localhost:8000";
+  }
+  // Server-side: use build-time env var or default
+  return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+})();
 
 // Helper to determine if code is running on the client side
 const isClient = () => typeof window !== "undefined";
