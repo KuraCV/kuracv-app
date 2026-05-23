@@ -1,15 +1,46 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import CreateJobModal from "./CreateJobModal";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isLogoutOpen, setIsLogoutOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#090D16] flex flex-col items-center justify-center p-6 transition-colors duration-300">
+        <div className="flex flex-col items-center gap-6">
+          <div className="relative w-16 h-16">
+            <div className="absolute inset-0 rounded-full border-4 border-[#5EEAD4]/20 animate-pulse"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-t-[#0F766E] dark:border-t-[#5EEAD4] animate-spin"></div>
+          </div>
+          <div className="text-center">
+            <h1 className="text-xl font-extrabold text-[#0F766E] dark:text-[#5EEAD4] tracking-wider animate-pulse mb-1 font-sans">
+              KuraCV AI
+            </h1>
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 font-sans">
+              Securing high-velocity workspace...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="bg-background text-on-background min-h-screen flex antialiased transition-colors duration-300">
@@ -139,8 +170,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     
                     <div className="absolute right-0 mt-2 w-48 bg-white border border-[#CBD5E1] rounded-xl shadow-lg py-2 z-20 animate-in fade-in slide-in-from-top-2 duration-150">
                       <div className="px-4 py-2 border-b border-[#E2E8F0]">
-                        <p className="text-sm font-bold text-slate-800">HR Manager</p>
-                        <p className="text-xs text-slate-500 truncate">recruiter@kuracv.com</p>
+                        <p className="text-sm font-bold text-slate-800 truncate">{user?.username || "HR Manager"}</p>
+                        <p className="text-xs text-slate-500 truncate">{user?.email || "recruiter@kuracv.com"}</p>
                       </div>
                       <Link 
                         href="/settings"
@@ -153,16 +184,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         </svg>
                         Settings
                       </Link>
-                      <Link 
-                        href="/login"
-                        onClick={() => setIsLogoutOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-bold transition-colors w-full text-left"
+                      <button 
+                        onClick={() => {
+                          setIsLogoutOpen(false);
+                          logout();
+                        }}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-bold transition-colors w-full text-left cursor-pointer"
                       >
                         <svg className="w-4 h-4 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                         </svg>
                         Logout
-                      </Link>
+                      </button>
                     </div>
                   </>
                 )}

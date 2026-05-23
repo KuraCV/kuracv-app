@@ -2,23 +2,40 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 export default function RegisterPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
+  const router = useRouter();
+  const { register, authError, clearError, isAuthenticated } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Redirect to jobs if already logged in, clear previous errors
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/jobs");
+    }
+    clearError();
+  }, [isAuthenticated, router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      alert("Successfully registered (Demo Mode)");
-    }, 1500);
+    setLocalLoading(true);
+    try {
+      await register(fullName, email, password);
+      // Context will redirect user on success
+    } catch (err) {
+      // Errors are captured in context's authError
+    } finally {
+      setLocalLoading(false);
+    }
   };
+
+  const isLoading = localLoading;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background transition-colors duration-300">
@@ -81,6 +98,18 @@ export default function RegisterPage() {
             <span className="text-label-md font-semibold text-outline tracking-wider">OR</span>
             <div className="h-px bg-outline-variant flex-1"></div>
           </div>
+
+          {/* Registration Error Banner */}
+          {authError && (
+            <div className="w-full bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] px-4 py-3 rounded-xl flex items-start gap-3 mb-5 animate-in fade-in slide-in-from-top-1 duration-200">
+              <svg className="w-5 h-5 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <div className="text-sm font-medium leading-5 flex-1">
+                {authError}
+              </div>
+            </div>
+          )}
 
           {/* Registration Form */}
           <form className="w-full flex flex-col gap-4" onSubmit={handleSubmit}>

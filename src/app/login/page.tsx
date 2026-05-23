@@ -2,22 +2,49 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
+  const [showRegisterSuccess, setShowRegisterSuccess] = useState(false);
+  const router = useRouter();
+  const { login, authError, clearError, isAuthenticated } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Check if session just registered and redirect to jobs if already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/jobs");
+    }
+
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("registered") === "true") {
+        setShowRegisterSuccess(true);
+      }
+    }
+
+    // Clean up auth errors when mounting login page
+    clearError();
+  }, [isAuthenticated, router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      alert("Successfully logged in (Demo Mode)");
-    }, 1500);
+    setLocalLoading(true);
+    try {
+      await login(email, password);
+      // Navigation is handled inside login() context call on success
+    } catch (err) {
+      // Errors are stored in context's authError and displayed in UI
+    } finally {
+      setLocalLoading(false);
+    }
   };
+
+  const isLoading = localLoading;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-background transition-colors duration-300">
@@ -79,6 +106,30 @@ export default function LoginPage() {
             <span className="text-label-md font-semibold text-outline tracking-wider">OR</span>
             <div className="h-px bg-outline-variant flex-1"></div>
           </div>
+
+          {/* Registration Success Banner */}
+          {showRegisterSuccess && (
+            <div className="w-full bg-[#ECFDF5] border border-[#A7F3D0] text-[#047857] px-4 py-3 rounded-xl flex items-start gap-3 mb-5 animate-in fade-in slide-in-from-top-1 duration-200">
+              <svg className="w-5 h-5 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <div className="text-sm font-medium leading-5 flex-1">
+                Registration successful! Please log in below.
+              </div>
+            </div>
+          )}
+
+          {/* Login Error Banner */}
+          {authError && (
+            <div className="w-full bg-[#FEF2F2] border border-[#FECACA] text-[#B91C1C] px-4 py-3 rounded-xl flex items-start gap-3 mb-5 animate-in fade-in slide-in-from-top-1 duration-200">
+              <svg className="w-5 h-5 flex-shrink-0 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <div className="text-sm font-medium leading-5 flex-1">
+                {authError}
+              </div>
+            </div>
+          )}
 
           {/* Email Login Form */}
           <form className="w-full flex flex-col gap-4" onSubmit={handleSubmit}>

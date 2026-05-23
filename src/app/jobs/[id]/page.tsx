@@ -1,51 +1,185 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import AppLayout from "@/components/AppLayout";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { apiFetch, ApiError } from "@/utils/api";
 import EditJobModal from "@/components/EditJobModal";
 
 export default function JobDetailsPage() {
   const params = useParams();
+  const router = useRouter();
+  const jobId = params.id;
+
+  const [job, setJob] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState("candidates");
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [job, setJob] = useState({
-    id: params.id || "1",
-    title: "Senior Frontend Developer",
-    department: "Engineering",
-    location: "Remote",
-    type: "Full-time",
-    status: "Active",
-    postedDate: "2 days ago",
-  });
+  
+  // Editable baseline requirements state
+  const [requirementsVal, setRequirementsVal] = useState("");
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Active": return "bg-teal-100 text-teal-800 focus:ring-teal-500";
-      case "Closed": return "bg-slate-200 text-slate-800 focus:ring-slate-500";
-      case "Draft": return "bg-amber-100 text-amber-800 focus:ring-amber-500";
-      default: return "bg-teal-100 text-teal-800 focus:ring-teal-500";
+  const fetchJobDetails = async () => {
+    setIsLoading(true);
+    setErrorMsg(null);
+    try {
+      const data: any = await apiFetch(`/api/jobs/${jobId}/`);
+      setJob(data);
+      setRequirementsVal(data.requirements || "");
+    } catch (err) {
+      console.error("Failed to load job details:", err);
+      setErrorMsg("Failed to retrieve the job details from server.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  useEffect(() => {
+    if (jobId) {
+      fetchJobDetails();
+    }
+  }, [jobId]);
+
+  const handleStatusChange = async (newStatus: string) => {
+    if (!job) return;
+    try {
+      const updated: any = await apiFetch(`/api/jobs/${jobId}/`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: newStatus }),
+      });
+      setJob(updated);
+    } catch (err) {
+      console.error("Failed to update job status:", err);
+      alert("Failed to update status on server.");
+    }
+  };
+
+  const handleUpdateEngine = async () => {
+    try {
+      const updated: any = await apiFetch(`/api/jobs/${jobId}/`, {
+        method: "PATCH",
+        body: JSON.stringify({ requirements: requirementsVal }),
+      });
+      setJob(updated);
+      alert("AI engine requirements baseline updated successfully!");
+    } catch (err) {
+      console.error("Failed to update baseline:", err);
+      alert("Failed to update requirements baseline.");
+    }
+  };
+
+  const handleSaveJob = async (updatedPayload: any) => {
+    try {
+      const updated: any = await apiFetch(`/api/jobs/${jobId}/`, {
+        method: "PUT",
+        body: JSON.stringify({
+          title: updatedPayload.title,
+          department: updatedPayload.department,
+          location_model: updatedPayload.location_model,
+          employment_type: updatedPayload.employment_type,
+          status: updatedPayload.status,
+          requirements: updatedPayload.requirements,
+          application_link: updatedPayload.application_link,
+        }),
+      });
+      setJob(updated);
+      setRequirementsVal(updated.requirements || "");
+    } catch (err) {
+      console.error("Failed to save changes:", err);
+      alert("Failed to save job modifications.");
+    }
+  };
+
+  const handleDeleteJob = async () => {
+    if (!window.confirm("Are you sure you want to delete this job posting? This action cannot be undone.")) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await apiFetch(`/api/jobs/${jobId}/`, {
+        method: "DELETE",
+      });
+      alert("Job deleted successfully.");
+      router.push("/jobs");
+    } catch (err) {
+      console.error("Failed to delete job:", err);
+      alert("Failed to delete this job posting. Please try again.");
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCopyLink = () => {
+    if (!job?.application_link) {
+      alert("No application link specified for this job.");
+      return;
+    }
+    navigator.clipboard.writeText(job.application_link);
+    alert("Application link copied to clipboard!");
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Active": return "bg-teal-100 text-teal-800 focus:ring-teal-500 border-teal-200";
+      case "Closed": return "bg-slate-200 text-slate-800 focus:ring-slate-500 border-slate-300";
+      case "Draft": return "bg-amber-100 text-amber-800 focus:ring-amber-500 border-amber-200";
+      default: return "bg-teal-100 text-teal-800 focus:ring-teal-500 border-teal-200";
+    }
+  };
+
+  // Mock candidates database mapping for simulation pipeline
   const candidates = [
-    { id: 1, name: "Marcus Thorne", role: "Senior Frontend Developer", match: 84, status: "Meet Criteria", date: "Oct 25", avatar: "https://i.pravatar.cc/150?u=marcus", aiSummary: "Marcus has extensive experience with React and Tailwind, but his background is primarily in e-commerce rather than fintech. He lacks direct experience with Next.js but shows a strong capacity for learning new frameworks.", skills: [{name: "React", matched: true}, {name: "Tailwind CSS", matched: true}, {name: "Agile", matched: false}, {name: "TypeScript", matched: true}] },
-    { id: 2, name: "Jordan Smith", role: "Junior Web Developer", match: 42, status: "Failed", date: "Oct 24", avatar: null, aiSummary: "Jordan is a recent bootcamp graduate with a strong portfolio in basic HTML/CSS, but lacks the required 3+ years of professional React experience and enterprise-level architecture knowledge.", skills: [{name: "HTML5", matched: false}, {name: "CSS3", matched: false}, {name: "JavaScript", matched: false}, {name: "Tailwind", matched: false}] },
-    { id: 3, name: "Emma Davis", role: "Full Stack Developer", match: 91, status: "Meet Criteria", date: "Oct 25", avatar: null, aiSummary: "Emma is a strong candidate with 6 years of experience...", skills: [{name: "React", matched: true}, {name: "Node.js", matched: true}, {name: "TypeScript", matched: true}] },
-    { id: 4, name: "Michael Chen", role: "React Developer", match: 76, status: "Considerable", date: "Oct 23", avatar: null, aiSummary: "Michael has solid React experience but lacks...", skills: [{name: "React", matched: true}, {name: "CSS", matched: false}, {name: "Redux", matched: true}] },
-    { id: 5, name: "James Brown", role: "Frontend Developer", match: 65, status: "Considerable", date: "Oct 20", avatar: null, aiSummary: "James is primarily a backend dev...", skills: [{name: "Python", matched: false}, {name: "JavaScript", matched: true}] },
+    { id: 1, name: "Marcus Thorne", role: job?.title || "Applicant", match: 84, status: "Meet Criteria", date: "Oct 25", avatar: "https://i.pravatar.cc/150?u=marcus", aiSummary: "Marcus has extensive experience with React and Tailwind, but his background is primarily in e-commerce rather than fintech. He lacks direct experience with Next.js but shows a strong capacity for learning new frameworks.", skills: [{name: "React", matched: true}, {name: "Tailwind CSS", matched: true}, {name: "Agile", matched: false}, {name: "TypeScript", matched: true}] },
+    { id: 2, name: "Jordan Smith", role: job?.title || "Applicant", match: 42, status: "Failed", date: "Oct 24", avatar: null, aiSummary: "Jordan is a recent bootcamp graduate with a strong portfolio in basic HTML/CSS, but lacks the required 3+ years of professional React experience and enterprise-level architecture knowledge.", skills: [{name: "HTML5", matched: false}, {name: "CSS3", matched: false}, {name: "JavaScript", matched: false}, {name: "Tailwind", matched: false}] },
+    { id: 3, name: "Emma Davis", role: job?.title || "Applicant", match: 91, status: "Meet Criteria", date: "Oct 25", avatar: null, aiSummary: "Emma is a strong candidate with 6 years of experience in modern layout, TypeScript types, and cross-functional teams.", skills: [{name: "React", matched: true}, {name: "Node.js", matched: true}, {name: "TypeScript", matched: true}] },
+    { id: 4, name: "Michael Chen", role: job?.title || "Applicant", match: 76, status: "Considerable", date: "Oct 23", avatar: null, aiSummary: "Michael has solid React experience but lacks large-scale framework deployment.", skills: [{name: "React", matched: true}, {name: "CSS", matched: false}, {name: "Redux", matched: true}] },
+    { id: 5, name: "James Brown", role: job?.title || "Applicant", match: 65, status: "Considerable", date: "Oct 20", avatar: null, aiSummary: "James is primarily a backend engineer with basic HTML layout knowledge.", skills: [{name: "Python", matched: false}, {name: "JavaScript", matched: true}] },
   ];
 
   const isSuccess = selectedCandidate?.status === "Meet Criteria" || selectedCandidate?.status === "Considerable";
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+          <div className="w-12 h-12 border-4 border-[#5EEAD4]/20 border-t-[#0F766E] rounded-full animate-spin"></div>
+          <p className="text-sm font-semibold text-slate-500 font-sans">Loading job details...</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (errorMsg || !job) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
+          <svg className="w-16 h-16 text-rose-400 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <p className="text-base font-bold text-slate-800 mb-1">{errorMsg || "Job posting not found"}</p>
+          <Link href="/jobs" className="mt-4 bg-[#0F766E] text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-[#0F766E]/90">
+            Back to Job Listings
+          </Link>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  const jobLoc = job.location_model || job.location || "Remote";
+  const jobType = job.employment_type || job.type || "Full-time";
 
   return (
     <AppLayout>
       {/* Breadcrumb & Actions */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div className="flex items-center gap-4">
-          <Link href="/jobs" className="text-slate-500 hover:text-primary transition-colors bg-white border border-slate-200 rounded-full p-2 shadow-sm">
+          <Link href="/jobs" className="text-slate-500 hover:text-primary transition-colors bg-white border border-slate-200 rounded-full p-2 shadow-sm cursor-pointer">
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
@@ -55,9 +189,9 @@ export default function JobDetailsPage() {
               <h1 className="text-2xl font-bold text-slate-800">{job.title}</h1>
               <div className="relative inline-flex items-center">
                 <select 
-                  value={job.status}
-                  onChange={(e) => setJob({ ...job, status: e.target.value })}
-                  className={`${getStatusColor(job.status)} text-xs font-bold pl-3 pr-7 py-1 rounded-full uppercase tracking-wide border-none outline-none cursor-pointer focus:ring-2 appearance-none hover:opacity-80 transition-opacity m-0`}
+                  value={job.status || "Active"}
+                  onChange={(e) => handleStatusChange(e.target.value)}
+                  className={`${getStatusColor(job.status)} text-xs font-bold pl-3 pr-7 py-1 rounded-full uppercase tracking-wide border border-transparent outline-none cursor-pointer focus:ring-2 appearance-none hover:opacity-80 transition-opacity m-0`}
                 >
                   <option value="Active">Active</option>
                   <option value="Closed">Closed</option>
@@ -69,18 +203,39 @@ export default function JobDetailsPage() {
               </div>
             </div>
             <p className="text-sm text-slate-500 mt-1">
-              {job.department} • {job.location} • {job.type} • Posted {job.postedDate}
+              {job.department || "General"} • {jobLoc} • {jobType}
             </p>
           </div>
         </div>
+        
+        {/* Buttons Controls */}
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setIsEditModalOpen(true)}
-            className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors shadow-sm"
+            className="px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition-colors shadow-sm cursor-pointer"
           >
             Edit Job
           </button>
-          <button className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md shadow-sm hover:bg-primary/90 transition-colors flex items-center gap-2">
+          
+          <button 
+            onClick={handleDeleteJob}
+            disabled={isDeleting}
+            className="px-4 py-2 text-sm font-bold text-red-600 bg-white border border-red-200 rounded-md hover:bg-red-50 transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+          >
+            {isDeleting ? (
+              <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            )}
+            Delete
+          </button>
+
+          <button 
+            onClick={handleCopyLink}
+            className="px-4 py-2 text-sm font-semibold text-white bg-primary rounded-md shadow-sm hover:bg-primary/90 transition-colors flex items-center gap-2 cursor-pointer"
+          >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
@@ -109,42 +264,26 @@ export default function JobDetailsPage() {
         ))}
       </div>
 
-      {/* Tabs */}
+      {/* Tabs Layout */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
         <div className="flex border-b border-slate-200 px-2 bg-slate-50 justify-between items-center">
           <div className="flex">
             <button 
               onClick={() => setActiveTab("candidates")}
-              className={`px-6 py-4 text-sm font-bold border-b-2 transition-colors ${activeTab === "candidates" ? "border-primary text-primary bg-white" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+              className={`px-6 py-4 text-sm font-bold border-b-2 transition-colors cursor-pointer ${activeTab === "candidates" ? "border-primary text-primary bg-white font-extrabold" : "border-transparent text-slate-500 hover:text-slate-700"}`}
             >
               Candidates Pool
             </button>
             <button 
               onClick={() => setActiveTab("details")}
-              className={`px-6 py-4 text-sm font-bold border-b-2 transition-colors ${activeTab === "details" ? "border-primary text-primary bg-white" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+              className={`px-6 py-4 text-sm font-bold border-b-2 transition-colors cursor-pointer ${activeTab === "details" ? "border-primary text-primary bg-white font-extrabold" : "border-transparent text-slate-500 hover:text-slate-700"}`}
             >
               Job Details
             </button>
           </div>
-          
-          {/* Actions: Search & Filter */}
-          <div className="flex items-center gap-3 pr-2">
-            <div className="relative hidden sm:block">
-              <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15.7955 15.8111L21 21M18 10.5C18 14.6421 14.6421 18 10.5 18C6.35786 18 3 14.6421 3 10.5C3 6.35786 6.35786 3 10.5 3C14.6421 3 18 6.35786 18 10.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <input type="text" placeholder="Search..." className="pl-9 pr-4 py-1.5 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary w-48 bg-white text-slate-700" />
-            </div>
-            <button className="flex items-center gap-2 border border-slate-200 bg-white text-slate-600 px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M10 18H14V16H10V18ZM3 6V8H21V6H3ZM6 13H18V11H6V13Z" fill="currentColor"/>
-              </svg>
-              Filter
-            </button>
-          </div>
         </div>
 
-        {/* Content */}
+        {/* Content Tabs */}
         <div className="p-0 flex-1">
           {activeTab === "candidates" && (
             <div className="overflow-x-auto">
@@ -192,7 +331,7 @@ export default function JobDetailsPage() {
                       <td className="px-6 py-4 text-right">
                         <button 
                           onClick={() => setSelectedCandidate(c)}
-                          className="text-[#0F766E] hover:underline text-sm font-bold"
+                          className="text-[#0F766E] hover:underline text-sm font-bold border-none bg-transparent cursor-pointer"
                         >
                           View Detail
                         </button>
@@ -202,33 +341,16 @@ export default function JobDetailsPage() {
                 </tbody>
               </table>
               
-              {/* Pagination Footer */}
               <div className="p-3 border-t border-slate-200 bg-slate-50 flex justify-between items-center text-slate-500 text-xs font-medium">
                 <span>Showing 1-5 of 5 candidates</span>
-                <div className="flex items-center gap-1">
-                  <button className="p-1 rounded hover:bg-slate-200 transition-colors disabled:opacity-50" disabled>
-                    <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                  </button>
-                  <button className="w-7 h-7 rounded bg-teal-700 text-white font-bold flex items-center justify-center">1</button>
-                  <button className="w-7 h-7 rounded hover:bg-slate-200 transition-colors flex items-center justify-center text-slate-700">2</button>
-                  <button className="w-7 h-7 rounded hover:bg-slate-200 transition-colors flex items-center justify-center text-slate-700">3</button>
-                  <span className="px-1">...</span>
-                  <button className="p-1 rounded hover:bg-slate-200 transition-colors">
-                    <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
-                  </button>
-                </div>
               </div>
             </div>
           )}
 
           {activeTab === "details" && (
-            <div className="p-8 max-w-4xl">
+            <div className="p-8 max-w-4xl animate-in fade-in duration-200">
               
-              <div className="border border-[#E2E8F0] rounded-xl p-6 mb-8 bg-white">
+              <div className="border border-[#E2E8F0] rounded-xl p-6 mb-8 bg-white shadow-sm">
                 <div className="flex items-center gap-3 mb-5">
                   <svg className="w-6 h-6 text-[#0F766E]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="4" y1="21" x2="4" y2="14"></line>
@@ -247,10 +369,14 @@ export default function JobDetailsPage() {
                 <div className="relative">
                   <textarea 
                     className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-lg p-5 text-sm text-[#334155] placeholder:text-[#94A3B8] focus:outline-none focus:border-[#5EEAD4] focus:ring-1 focus:ring-[#5EEAD4] transition-all min-h-[160px] pb-16 resize-y"
-                    placeholder="Describe your ideal candidate in plain English... e.g., 'Looking for a senior frontend dev with 5+ years React experience, background in fintech, and strong CSS skills.'"
-                    defaultValue="Looking for a highly skilled Senior Frontend Developer to join our core engineering team. Ideal candidate should have 5+ years of experience with React and Next.js, deep understanding of Tailwind CSS, and experience with modern state management libraries. A background in building accessible interfaces is a huge plus."
+                    placeholder="Describe your ideal candidate in plain English..."
+                    value={requirementsVal}
+                    onChange={(e) => setRequirementsVal(e.target.value)}
                   ></textarea>
-                  <button className="absolute bottom-4 right-4 bg-[#5EEAD4] text-[#0F766E] px-4 py-2.5 rounded-md font-bold text-sm flex items-center gap-2 hover:bg-[#5EEAD4]/80 transition-colors shadow-sm">
+                  <button 
+                    onClick={handleUpdateEngine}
+                    className="absolute bottom-4 right-4 bg-[#5EEAD4] text-[#0F766E] px-4 py-2.5 rounded-md font-bold text-sm flex items-center gap-2 hover:bg-[#5EEAD4]/80 transition-colors shadow-sm cursor-pointer"
+                  >
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                       <polyline points="7.5 4.21 12 6.81 16.5 4.21"></polyline>
@@ -265,15 +391,22 @@ export default function JobDetailsPage() {
               </div>
 
               <h3 className="text-lg font-bold text-slate-800 mb-3">Application Form Link</h3>
-              <div className="bg-[#F1F5F9] border border-[#CBD5E1] rounded-md px-4 py-3 flex items-center justify-between w-full max-w-xl">
-                <span className="text-slate-600 text-sm truncate">https://forms.google.com/kuracv-apply/senior-frontend</span>
-                <button className="text-primary hover:text-primary/80 font-bold text-sm flex items-center gap-1 ml-4">
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                  </svg>
-                  Copy
-                </button>
-              </div>
+              {job.application_link ? (
+                <div className="bg-[#F1F5F9] border border-[#CBD5E1] rounded-md px-4 py-3 flex items-center justify-between w-full max-w-xl shadow-sm">
+                  <span className="text-slate-600 text-sm truncate mr-4">{job.application_link}</span>
+                  <button 
+                    onClick={handleCopyLink}
+                    className="text-primary hover:text-primary/80 font-bold text-sm flex items-center gap-1 cursor-pointer border-none bg-transparent"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    Copy
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-500 italic">No application form link configured.</p>
+              )}
             </div>
           )}
         </div>
@@ -337,19 +470,18 @@ export default function JobDetailsPage() {
             <div className="border-t border-[#E2E8F0] pt-5 grid grid-cols-2 gap-3">
               <button 
                 onClick={() => setSelectedCandidate(null)}
-                className={`w-full font-bold py-2.5 rounded-md transition-colors text-sm ${isSuccess ? 'bg-[#0F766E] text-white hover:bg-[#0F766E]/90' : 'bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#334155]'}`}
+                className={`w-full font-bold py-2.5 rounded-md transition-colors text-sm cursor-pointer ${isSuccess ? 'bg-[#0F766E] text-white hover:bg-[#0F766E]/90' : 'bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#334155]'}`}
               >
                 Schedule Interview
               </button>
               <button 
                 onClick={() => setSelectedCandidate(null)}
-                className="w-full bg-white border border-[#0F766E] text-[#0F766E] hover:bg-[#F8FAFC] font-bold py-2.5 rounded-md transition-colors text-sm"
+                className="w-full bg-white border border-[#0F766E] text-[#0F766E] hover:bg-[#F8FAFC] font-bold py-2.5 rounded-md transition-colors text-sm cursor-pointer"
               >
                 View CV
               </button>
             </div>
           </div>
-          {/* Backdrop click to close */}
           <div className="fixed inset-0 z-[-1]" onClick={() => setSelectedCandidate(null)}></div>
         </div>
       )}
@@ -357,8 +489,17 @@ export default function JobDetailsPage() {
       <EditJobModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
-        job={job}
-        onSave={(updatedJob) => setJob({ ...job, ...updatedJob })}
+        job={{
+          id: jobId as string,
+          title: job.title,
+          department: job.department,
+          location: job.location_model || job.location,
+          type: job.employment_type || job.type,
+          status: job.status,
+          requirements: job.requirements,
+          application_link: job.application_link,
+        }}
+        onSave={handleSaveJob}
       />
     </AppLayout>
   );

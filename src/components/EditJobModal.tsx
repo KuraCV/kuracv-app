@@ -4,35 +4,38 @@ interface EditJobModalProps {
   isOpen: boolean;
   onClose: () => void;
   job: {
+    id?: string;
     title: string;
     department: string;
     location: string;
+    location_model?: string;
     type: string;
+    employment_type?: string;
     status: string;
+    requirements?: string;
+    application_link?: string;
   };
-  onSave: (updatedJob: {
-    title: string;
-    department: string;
-    location: string;
-    type: string;
-    status: string;
-  }) => void;
+  onSave: (updatedJob: any) => void;
 }
 
 export default function EditJobModal({ isOpen, onClose, job, onSave }: EditJobModalProps) {
   const [jobTitle, setJobTitle] = useState(job.title);
   const [department, setDepartment] = useState(job.department);
-  const [location, setLocation] = useState(job.location);
-  const [type, setType] = useState(job.type);
+  const [location, setLocation] = useState(job.location || job.location_model || "Remote");
+  const [type, setType] = useState(job.type || job.employment_type || "Full-time");
   const [status, setStatus] = useState(job.status);
+  const [requirements, setRequirements] = useState(job.requirements || "");
+  const [appLink, setAppLink] = useState(job.application_link || "");
 
   // Sync state with job prop when modal opens or job prop changes
   useEffect(() => {
-    setJobTitle(job.title);
-    setDepartment(job.department);
-    setLocation(job.location);
-    setType(job.type);
-    setStatus(job.status);
+    setJobTitle(job.title || "");
+    setDepartment(job.department || "");
+    setLocation(job.location || job.location_model || "Remote");
+    setType(job.type || job.employment_type || "Full-time");
+    setStatus(job.status || "Active");
+    setRequirements(job.requirements || "");
+    setAppLink(job.application_link || "");
   }, [job, isOpen]);
 
   if (!isOpen) return null;
@@ -42,9 +45,13 @@ export default function EditJobModal({ isOpen, onClose, job, onSave }: EditJobMo
     onSave({
       title: jobTitle,
       department,
+      location_model: location,
       location,
+      employment_type: type,
       type,
       status,
+      requirements,
+      application_link: appLink,
     });
     onClose();
   };
@@ -57,8 +64,9 @@ export default function EditJobModal({ isOpen, onClose, job, onSave }: EditJobMo
         <div className="flex items-center justify-between px-6 py-4 border-b border-[#E2E8F0]">
           <h2 className="text-xl font-bold text-[#1E293B]">Edit Job Details</h2>
           <button 
+            type="button"
             onClick={onClose}
-            className="text-[#64748B] hover:bg-slate-100 p-1.5 rounded-full transition-colors"
+            className="text-[#64748B] hover:bg-slate-100 p-1.5 rounded-full transition-colors cursor-pointer"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 6L6 18M6 6l12 12" />
@@ -163,7 +171,8 @@ export default function EditJobModal({ isOpen, onClose, job, onSave }: EditJobMo
               <textarea 
                 placeholder="Describe the ideal candidate..."
                 rows={4}
-                defaultValue="Looking for a highly skilled Senior Frontend Developer to join our core engineering team. Ideal candidate should have 5+ years of experience with React and Next.js, deep understanding of Tailwind CSS, and experience with modern state management libraries. A background in building accessible interfaces is a huge plus."
+                value={requirements}
+                onChange={(e) => setRequirements(e.target.value)}
                 className="w-full bg-[#F1F5F9] border border-[#CBD5E1] rounded-md px-3 py-2 text-sm text-[#334155] focus:outline-none focus:ring-1 focus:ring-primary resize-none"
               ></textarea>
             </div>
@@ -173,7 +182,8 @@ export default function EditJobModal({ isOpen, onClose, job, onSave }: EditJobMo
               <input 
                 type="text" 
                 placeholder="https://forms.google.com/..."
-                defaultValue="https://forms.google.com/kuracv-apply/senior-frontend"
+                value={appLink}
+                onChange={(e) => setAppLink(e.target.value)}
                 className="w-full bg-[#F1F5F9] border border-[#CBD5E1] rounded-md px-3 py-2 text-sm text-[#334155] focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
@@ -186,14 +196,14 @@ export default function EditJobModal({ isOpen, onClose, job, onSave }: EditJobMo
           <button 
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-[#475569] hover:bg-slate-50 rounded-md transition-colors"
+            className="px-4 py-2 text-sm font-medium text-[#475569] hover:bg-slate-50 rounded-md transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button 
             type="submit"
             form="edit-job-form"
-            className="px-6 py-2 text-sm font-medium bg-primary text-white rounded-md shadow-sm hover:bg-primary/90 transition-colors"
+            className="px-6 py-2 text-sm font-medium bg-primary text-white rounded-md shadow-sm hover:bg-primary/90 transition-colors cursor-pointer"
           >
             Save Changes
           </button>
