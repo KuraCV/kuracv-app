@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import AppLayout from "@/components/AppLayout";
 import CreateJobModal from "@/components/CreateJobModal";
 import Link from "next/link";
@@ -33,60 +33,62 @@ export default function JobListingsPage() {
   const closedJobsCount = jobs.filter((j: any) => j.status === "Closed").length;
   const draftJobsCount = jobs.filter((j: any) => j.status === "Draft").length;
 
+  // Keep a ref to the latest filters so fetchJobs is always stable
+  const filtersRef = useRef({ searchVal, selectedEmploymentTypes, selectedLocationModels, activeTab });
+  useEffect(() => {
+    filtersRef.current = { searchVal, selectedEmploymentTypes, selectedLocationModels, activeTab };
+  });
+
   /**
-   * Core fetch function.
+   * Core fetch function — stable reference, reads latest filters from ref.
    * - Pass a full URL (from next/previous) to navigate pages.
    * - Pass nothing to build a fresh first-page request from current state.
    */
-  const fetchJobs = useCallback(
-    async (pageUrl?: string | null) => {
-      setIsLoading(true);
-      setErrorMsg(null);
-      try {
-        let url: string;
+  const fetchJobs = useCallback(async (pageUrl?: string | null) => {
+    setIsLoading(true);
+    setErrorMsg(null);
+    try {
+      let url: string;
 
-        if (pageUrl) {
-          // Use the exact URL the server gave us (already has all params + cursor)
-          url = pageUrl;
-        } else {
-          const queryParams = new URLSearchParams();
-          if (searchVal.trim()) {
-            queryParams.set("search", searchVal.trim());
-          }
-          if (selectedEmploymentTypes.length > 0) {
-            queryParams.set("employment_type", selectedEmploymentTypes.join(","));
-          }
-          if (selectedLocationModels.length > 0) {
-            queryParams.set("location_model", selectedLocationModels.join(","));
-          }
-          if (activeTab !== "All") {
-            queryParams.set("status", activeTab);
-          }
-          url = `/api/jobs/?${queryParams.toString()}`;
+      if (pageUrl) {
+        url = pageUrl;
+      } else {
+        const { searchVal, selectedEmploymentTypes, selectedLocationModels, activeTab } = filtersRef.current;
+        const queryParams = new URLSearchParams();
+        if (searchVal.trim()) {
+          queryParams.set("search", searchVal.trim());
         }
-
-        const res: any = await apiFetch(url);
-        setJobs(res.results ?? []);
-        setTotalCount(res.count ?? 0);
-        setNextUrl(res.next ?? null);
-        setPreviousUrl(res.previous ?? null);
-      } catch (err) {
-        console.error("Failed to load jobs list:", err);
-        setErrorMsg("Failed to retrieve job postings from server.");
-      } finally {
-        setIsLoading(false);
+        if (selectedEmploymentTypes.length > 0) {
+          queryParams.set("employment_type", selectedEmploymentTypes.join(","));
+        }
+        if (selectedLocationModels.length > 0) {
+          queryParams.set("location_model", selectedLocationModels.join(","));
+        }
+        if (activeTab !== "All") {
+          queryParams.set("status", activeTab);
+        }
+        url = `/api/jobs/?${queryParams.toString()}`;
       }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [searchVal, selectedEmploymentTypes, selectedLocationModels, activeTab]
-  );
 
-  // Re-fetch from page 1 whenever filters, search, or active tab change
+      const res: any = await apiFetch(url);
+      setJobs(res.results ?? []);
+      setTotalCount(res.count ?? 0);
+      setNextUrl(res.next ?? null);
+      setPreviousUrl(res.previous ?? null);
+    } catch (err) {
+      console.error("Failed to load jobs list:", err);
+      setErrorMsg("Failed to retrieve job postings from server.");
+    } finally {
+      setIsLoading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Re-fetch from page 1 whenever filters or active tab change
   useEffect(() => {
     setCurrentPage(1);
     fetchJobs();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedEmploymentTypes, selectedLocationModels, activeTab]);
+  }, [selectedEmploymentTypes, selectedLocationModels, activeTab, fetchJobs]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
