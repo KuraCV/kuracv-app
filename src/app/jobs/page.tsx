@@ -149,16 +149,22 @@ export default function JobListingsPage() {
 
           {/* Search bar */}
           <form onSubmit={handleSearchSubmit} className="relative flex items-center bg-[#F1F5F9] rounded-lg border border-[#CBD5E1] overflow-hidden transition-all duration-200 focus-within:ring-2 focus-within:ring-[#5EEAD4] w-full sm:w-60">
-            <svg className="w-4 h-4 absolute left-3 text-slate-400 pointer-events-none" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M15.7955 15.8111L21 21M18 10.5C18 14.6421 14.6421 18 10.5 18C6.35786 18 3 14.6421 3 10.5C3 6.35786 6.35786 3 10.5 3C14.6421 3 18 6.35786 18 10.5Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
             <input
               type="text"
               placeholder="Search jobs..."
               value={searchVal}
               onChange={(e) => setSearchVal(e.target.value)}
-              className="flex-1 bg-transparent border-none py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-0"
+              className="flex-1 bg-transparent border-none py-2 pl-3 pr-9 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-0"
             />
+            <button
+              type="submit"
+              className="absolute right-0 h-full px-3 flex items-center text-slate-400 hover:text-primary transition-colors cursor-pointer bg-transparent border-none"
+              aria-label="Search"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M15.7955 15.8111L21 21M18 10.5C18 14.6421 14.6421 18 10.5 18C6.35786 18 3 14.6421 3 10.5C3 6.35786 6.35786 3 10.5 3C14.6421 3 18 6.35786 18 10.5Z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
           </form>
 
           {/* Filter Trigger button */}
