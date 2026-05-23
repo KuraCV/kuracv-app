@@ -25,6 +25,19 @@ export default function JobDetailsPage() {
   // Applicants state
   const [applicants, setApplicants] = useState<any[]>([]);
   const [isLoadingApplicants, setIsLoadingApplicants] = useState<boolean>(false);
+  const [applicantsPage, setApplicantsPage] = useState(1);
+  const [applicantsPageSize] = useState(10);
+  const [applicantsTotalCount, setApplicantsTotalCount] = useState(0);
+  const [applicantsNextPage, setApplicantsNextPage] = useState<string | null>(null);
+  const [applicantsPreviousPage, setApplicantsPreviousPage] = useState<string | null>(null);
+  const [applicantsStatusFilter, setApplicantsStatusFilter] = useState<string | null>(null);
+  const [selectedApplicantIds, setSelectedApplicantIds] = useState<string[]>([]);
+  const [isDeletingApplicants, setIsDeletingApplicants] = useState(false);
+
+  const applicantStatuses = ["Meet Criteria", "Considerable", "Failed"];
+  
+  // Job stats state
+  const [jobStats, setJobStats] = useState<any>(null);
   
   // Email generation state
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -50,19 +63,65 @@ export default function JobDetailsPage() {
     }
   };
 
-  const fetchApplicants = async () => {
+  const fetchApplicants = async (page: number = 1, status: string | null = applicantsStatusFilter) => {
     if (!jobId) return;
     setIsLoadingApplicants(true);
     try {
-      const response: any = await apiFetch(`/api/applicants/job/${jobId}/`);
-      const applicantsList = response.applicants || [];
-      console.log("Fetched applicants:", applicantsList);
+      let url = `/api/applicants/?job_id=${jobId}&page=${page}&page_size=${applicantsPageSize}`;
+      if (status) url += `&status=${encodeURIComponent(status)}`;
+      const response: any = await apiFetch(url);
+      const applicantsList = response.results || [];
       setApplicants(applicantsList);
+      setApplicantsTotalCount(response.count || 0);
+      setApplicantsNextPage(response.next || null);
+      setApplicantsPreviousPage(response.previous || null);
+      setApplicantsPage(page);
+      setSelectedApplicantIds([]);
     } catch (err) {
       console.error("Failed to load applicants:", err);
-      // Don't set error for applicants - it's secondary data
     } finally {
       setIsLoadingApplicants(false);
+    }
+  };
+
+  const handleApplicantsStatusChange = (status: string | null) => {
+    setApplicantsStatusFilter(status);
+    fetchApplicants(1, status);
+  };
+
+  const handleApplicantsToggleSelect = (id: string) => {
+    setSelectedApplicantIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleApplicantsSelectAll = () => {
+    if (selectedApplicantIds.length === candidates.length) {
+      setSelectedApplicantIds([]);
+    } else {
+      setSelectedApplicantIds(candidates.map((c: any) => c.id));
+    }
+  };
+
+  const handleApplicantsBulkDelete = async (idsToDelete?: string[]) => {
+    const ids = idsToDelete ?? selectedApplicantIds;
+    if (ids.length === 0) return;
+    if (!window.confirm(`Delete ${ids.length} applicant(s)? This cannot be undone.`)) return;
+    setIsDeletingApplicants(true);
+    try {
+      await apiFetch(`/api/applicants/delete/`, {
+        method: "DELETE",
+        body: JSON.stringify({ candidate_ids: ids }),
+      });
+      const deletedSet = new Set(ids);
+      setApplicants(prev => prev.filter(a => !deletedSet.has(a.id)));
+      setApplicantsTotalCount(prev => prev - ids.length);
+      if (selectedCandidate && deletedSet.has(selectedCandidate.id)) setSelectedCandidate(null);
+      setSelectedApplicantIds([]);
+    } catch (err) {
+      console.error("Failed to delete applicants:", err);
+    } finally {
+      setIsDeletingApplicants(false);
     }
   };
 
@@ -105,10 +164,23 @@ export default function JobDetailsPage() {
     }
   };
 
+  const fetchJobStats = async () => {
+    if (!jobId) return;
+    try {
+      const stats: any = await apiFetch(`/api/applicants/job/stats/${jobId}/`);
+      setJobStats(stats);
+      console.log("Fetched job stats:", stats);
+    } catch (err) {
+      console.error("Failed to load job stats:", err);
+      // Stats are secondary data, don't set error
+    }
+  };
+
   useEffect(() => {
     if (jobId) {
       fetchJobDetails();
       fetchApplicants();
+      fetchJobStats();
     }
   }, [jobId]);
 
@@ -217,7 +289,7 @@ export default function JobDetailsPage() {
       "Failed": "Failed",
     };
     return {
-      id: idx,
+      id: applicant.id || idx,
       name: applicant.name,
       email: applicant.email,
       role: job?.title || "Applicant",
@@ -225,12 +297,12 @@ export default function JobDetailsPage() {
       status: statusMap[applicant.status] || applicant.status || "Pending",
       date: applicant.created_at ? new Date(applicant.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "N/A",
       avatar: null,
-      aiSummary: applicant.summary || "Awaiting summary.",
+      aiSummary: applicant.summary || "Summary not available yet.",
       skills: (applicant.skills || []).map((skill: any) => ({
         name: typeof skill === "string" ? skill : skill.name,
         matched: true,
       })),
-      cv_url: applicant.cv_url,
+      cv_url: applicant.cv_url || null,
     };
   });
 
@@ -340,18 +412,39 @@ export default function JobDetailsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {[
-          { label: "Total Candidates", value: "128", trend: "+12", trendUp: true },
-          { label: "High Match (>80%)", value: "24", trend: "+3", trendUp: true },
-          { label: "Shortlisted", value: "12", trend: "0", trendUp: true },
-          { label: "Interviewing", value: "5", trend: "+1", trendUp: true },
+        {jobStats ? [
+          { label: "Total Candidates", key: "total_candidates" },
+          { label: "Meet Criteria", key: "meet_criteria" },
+          { label: "Considerable", key: "considerable" },
+          { label: "Failed", key: "failed" },
+        ].map((stat, i) => {
+          const statData = jobStats[stat.key];
+          const count = statData?.count || 0;
+          const thisWeek = statData?.this_week || 0;
+          const trend = thisWeek > 0 ? `+${thisWeek}` : thisWeek.toString();
+          return (
+            <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+              <p className="text-sm font-bold text-slate-500 mb-1">{stat.label}</p>
+              <div className="flex items-end justify-between">
+                <h3 className="text-3xl font-bold text-slate-800">{count}</h3>
+                <span className={`text-xs font-bold px-2 py-1 rounded-full ${thisWeek > 0 ? 'bg-teal-100 text-teal-800' : 'bg-slate-100 text-slate-600'}`}>
+                  {trend} this week
+                </span>
+              </div>
+            </div>
+          );
+        }) : [
+          { label: "Total Candidates", value: "—", trend: "—" },
+          { label: "Meet Criteria", value: "—", trend: "—" },
+          { label: "Considerable", value: "—", trend: "—" },
+          { label: "Failed", value: "—", trend: "—" },
         ].map((stat, i) => (
-          <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+          <div key={i} className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm opacity-50">
             <p className="text-sm font-bold text-slate-500 mb-1">{stat.label}</p>
             <div className="flex items-end justify-between">
               <h3 className="text-3xl font-bold text-slate-800">{stat.value}</h3>
-              <span className={`text-xs font-bold px-2 py-1 rounded-full ${stat.trendUp && stat.trend !== "0" ? 'bg-teal-100 text-teal-800' : 'bg-slate-100 text-slate-600'}`}>
-                {stat.trend} this week
+              <span className="text-xs font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-600">
+                {stat.trend}
               </span>
             </div>
           </div>
@@ -380,31 +473,78 @@ export default function JobDetailsPage() {
         {/* Content Tabs */}
         <div className="p-0 flex-1">
           {activeTab === "candidates" && (
-            <div className="overflow-x-auto">
-              {isLoadingApplicants ? (
-                <div className="flex items-center justify-center min-h-[300px]">
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-10 h-10 border-4 border-slate-200 border-t-primary rounded-full animate-spin"></div>
-                    <p className="text-sm font-medium text-slate-500">Loading applicants...</p>
-                  </div>
+            <div className="flex flex-col flex-1">
+              {/* Status filter tabs + bulk actions toolbar */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50 gap-3 flex-wrap">
+                {/* Status tabs */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleApplicantsStatusChange(null)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${applicantsStatusFilter === null ? "bg-teal-600 text-white" : "border border-slate-200 text-slate-700 hover:bg-slate-100 bg-white"}`}
+                  >
+                    All
+                  </button>
+                  {applicantStatuses.map(status => (
+                    <button
+                      key={status}
+                      onClick={() => handleApplicantsStatusChange(status)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${applicantsStatusFilter === status ? "bg-teal-600 text-white" : "border border-slate-200 text-slate-700 hover:bg-slate-100 bg-white"}`}
+                    >
+                      {status}
+                    </button>
+                  ))}
                 </div>
-              ) : candidates.length === 0 ? (
-                <div className="flex items-center justify-center min-h-[300px]">
-                  <div className="text-center">
-                    <svg className="w-12 h-12 text-slate-300 mx-auto mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="9" cy="7" r="4"></circle>
-                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                {/* Bulk actions */}
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-slate-200">
+                    <input
+                      id="selectAllApplicants"
+                      type="checkbox"
+                      checked={candidates.length > 0 && selectedApplicantIds.length === candidates.length}
+                      onChange={handleApplicantsSelectAll}
+                      className="rounded border-slate-300 text-teal-600 focus:ring-teal-600 w-4 h-4 cursor-pointer"
+                    />
+                    <label htmlFor="selectAllApplicants" className="text-sm font-medium text-slate-700 cursor-pointer">Select All</label>
+                  </div>
+                  <button
+                    onClick={() => handleApplicantsBulkDelete()}
+                    disabled={selectedApplicantIds.length === 0 || isDeletingApplicants}
+                    className="flex items-center gap-2 px-3 py-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                     </svg>
-                    <p className="text-slate-500 text-sm font-medium">No applicants yet</p>
-                  </div>
+                    {isDeletingApplicants ? "Deleting..." : `Delete (${selectedApplicantIds.length})`}
+                  </button>
                 </div>
-              ) : (
-                <>
+              </div>
+
+              <div className="flex-1 overflow-x-auto">
+                {isLoadingApplicants ? (
+                  <div className="flex items-center justify-center h-full min-h-[300px]">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-10 h-10 border-4 border-slate-200 border-t-primary rounded-full animate-spin"></div>
+                      <p className="text-sm font-medium text-slate-500">Loading applicants...</p>
+                    </div>
+                  </div>
+                ) : candidates.length === 0 ? (
+                  <div className="flex items-center justify-center h-full min-h-[300px]">
+                    <div className="text-center">
+                      <svg className="w-12 h-12 text-slate-300 mx-auto mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                      </svg>
+                      <p className="text-slate-500 text-sm font-medium">No applicants found</p>
+                    </div>
+                  </div>
+                ) : (
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-slate-200 bg-white">
+                        <th className="px-4 py-3 w-10"></th>
                         <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Candidate Name</th>
                         <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">AI Match Score</th>
                         <th className="px-6 py-3 text-xs font-medium text-slate-500 uppercase tracking-wider">Current Role</th>
@@ -416,6 +556,14 @@ export default function JobDetailsPage() {
                     <tbody className="divide-y divide-slate-100">
                       {candidates.map((c) => (
                         <tr key={c.id} className="hover:bg-[#F0FDF4] transition-colors cursor-pointer bg-white group">
+                          <td className="px-4 py-4">
+                            <input
+                              type="checkbox"
+                              checked={selectedApplicantIds.includes(c.id)}
+                              onChange={(e) => { e.stopPropagation(); handleApplicantsToggleSelect(c.id); }}
+                              className="rounded border-slate-300 text-teal-600 focus:ring-teal-600 w-4 h-4 cursor-pointer"
+                            />
+                          </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <div className="w-9 h-9 rounded-full bg-[#F1F5F9] border border-slate-200 flex items-center justify-center text-[#475569] font-bold text-sm">
@@ -444,22 +592,61 @@ export default function JobDetailsPage() {
                           </td>
                           <td className="px-6 py-4 text-sm text-slate-500 font-medium">{c.date}</td>
                           <td className="px-6 py-4 text-right">
-                            <button 
-                              onClick={() => setSelectedCandidate(c)}
-                              className="text-[#0F766E] hover:underline text-sm font-bold border-none bg-transparent cursor-pointer"
-                            >
-                              View Detail
-                            </button>
+                            <div className="flex items-center justify-end gap-3">
+                              <button
+                                onClick={() => setSelectedCandidate(c)}
+                                className="text-[#0F766E] hover:underline text-sm font-bold border-none bg-transparent cursor-pointer"
+                              >
+                                View Detail
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleApplicantsBulkDelete([c.id]); }}
+                                disabled={isDeletingApplicants}
+                                className="text-red-500 hover:text-red-700 transition-colors disabled:opacity-50"
+                                title="Delete applicant"
+                              >
+                                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="3 6 5 6 21 6"></polyline>
+                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  <div className="p-3 border-t border-slate-200 bg-slate-50 flex justify-between items-center text-slate-500 text-xs font-medium">
-                    <span>Showing 1-{candidates.length} of {candidates.length} applicant{candidates.length !== 1 ? "s" : ""}</span>
-                  </div>
-                </>
-              )}
+                )}
+              </div>
+              {/* Pagination — always anchored to bottom */}
+              <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
+                <div className="text-slate-500 text-xs font-medium">
+                  <span>
+                    {applicantsTotalCount === 0
+                      ? "No applicants"
+                      : `Showing ${(applicantsPage - 1) * applicantsPageSize + 1}–${Math.min(applicantsPage * applicantsPageSize, applicantsTotalCount)} of ${applicantsTotalCount} applicant${applicantsTotalCount !== 1 ? "s" : ""}`}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => fetchApplicants(applicantsPage - 1)}
+                    disabled={!applicantsPreviousPage}
+                    className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-md hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Previous
+                  </button>
+                  <span className="text-xs font-semibold text-slate-600 px-3 py-1.5">
+                    Page {applicantsPage}
+                  </span>
+                  <button
+                    onClick={() => fetchApplicants(applicantsPage + 1)}
+                    disabled={!applicantsNextPage}
+                    className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-md hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -531,7 +718,7 @@ export default function JobDetailsPage() {
       {/* Candidate Modal */}
       {selectedCandidate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-md rounded-xl shadow-xl overflow-hidden flex flex-col p-6 animate-in zoom-in-95 duration-200 relative">
+          <div className="bg-white w-full max-w-2xl rounded-xl shadow-xl overflow-hidden flex flex-col p-6 animate-in zoom-in-95 duration-200 relative">
             <div className="flex justify-between items-start mb-5">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center text-[#475569] font-bold text-xl overflow-hidden">
