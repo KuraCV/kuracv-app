@@ -4,15 +4,22 @@
  * and automatic 401 Unauthorized token refreshing.
  */
 
-// Get API base URL from runtime config (client-side) or env var (build-time/server-side)
-export const BASE_URL = (() => {
+// Get API base URL dynamically to support both runtime and build-time config
+function getBaseUrl(): string {
   if (typeof window !== "undefined") {
-    // Client-side: use the runtime config loaded from config.js
-    return (window as any).__API_BASE_URL || "http://localhost:8000";
+    // Client-side: try runtime config first (from config.js in Docker), then env var
+    const url =
+      (window as any).__API_BASE_URL ||
+      process.env.NEXT_PUBLIC_API_BASE_URL ||
+      "http://localhost:8000";
+    console.log("[API] Using base URL:", url, "(env:", process.env.NEXT_PUBLIC_API_BASE_URL, ")");
+    return url;
   }
   // Server-side: use build-time env var or default
   return process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-})();
+}
+
+export const BASE_URL = getBaseUrl();
 
 // Helper to determine if code is running on the client side
 const isClient = () => typeof window !== "undefined";

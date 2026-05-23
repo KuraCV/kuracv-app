@@ -17,6 +17,7 @@ interface AuthContextType {
   isLoading: boolean;
   authError: string | null;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (credential: string) => Promise<void>;
   register: (fullName: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   clearError: () => void;
@@ -232,6 +233,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setAuthError(null);
     router.push("/login");
+  };
+
+  const loginWithGoogle = async (credential: string) => {
+    setIsLoading(true);
+    setAuthError(null);
+    try {
+      const response: any = await apiFetch("/api/accounts/google/", {
+        method: "POST",
+        body: JSON.stringify({ credential }),
+      });
+
+      const { access, refresh, user: returnedUser } = response;
+
+      if (!access || !refresh) {
+        throw new Error("Missing auth tokens in server response.");
+      }
+
+      // Save tokens
+      localStorage.setItem("access_token", access);
+      localStorage.setItem("refresh_token", refresh);
+      setAccessToken(access);
+
+      // Save user
+      let finalUser: UserProfile;
+      if (returnedUser) {
+        finalUser = {
+          id: returnedUser.id,
+          username: returnedUser.username,
+          email: returnedUser.email,
+        };
+      } else {
+        // Decode access token to retrieve user details if not returned directly
+        const decoded = decodeJwt(access);
+        finalUser = {
+          id: decoded?.user_id || 0,
+          username: decoded?.username || decoded?.email?.split("@")[0] || "User",
+          email: decoded?.email || "",
+        };
+      }
+
+      localStorage.setItem("user_info", JSON.stringify(finalUser));
+      setUser(finalUser);
+
+      // Navigate to main app
+      router.push("/jobs");
+    } catch (err) {
+      console.error("Google login failed:", err);
+      if (err instanceof ApiError) {
+        setAuthError(err.data.detail || err.data.error || "Google authentication failed.");
+      } else {
+        setAuthError((err as Error).message || "An unexpected error occurred during Google login.");
+      }
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

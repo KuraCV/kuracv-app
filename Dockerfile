@@ -11,9 +11,11 @@ RUN npm ci
 # Copy the rest of your app's source code
 COPY . .
 
-# Accept API base URL as a build argument (optional, for build-time config)
+# Accept build arguments for environment variables
 ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID=""
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID
 
 # Build the Next.js application
 RUN npm run build
