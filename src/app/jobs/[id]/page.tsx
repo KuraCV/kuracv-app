@@ -21,6 +21,7 @@ export default function JobDetailsPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isSavingJob, setIsSavingJob] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [webhookUrlCopied, setWebhookUrlCopied] = useState(false);
   
   // Applicants state
   const [applicants, setApplicants] = useState<any[]>([]);
@@ -212,7 +213,7 @@ export default function JobDetailsPage() {
     }
   };
 
-  const handleSaveJob = async (updatedPayload: any) => {
+  const handleSaveJob = async (updatedPayload: any): Promise<boolean> => {
     setIsSavingJob(true);
     setSaveFeedback(null);
     try {
@@ -230,15 +231,16 @@ export default function JobDetailsPage() {
       });
       setJob(updated);
       setRequirementsVal(updated.requirements || "");
-      setIsEditModalOpen(false);
       setSaveFeedback({ type: "success", message: "Job details updated successfully!" });
       setTimeout(() => setSaveFeedback(null), 3000);
+      return true;
     } catch (err) {
       console.error("Failed to save changes:", err);
-      setSaveFeedback({ 
-        type: "error", 
-        message: err instanceof ApiError ? err.data.detail || "Failed to save job modifications." : "Failed to save job modifications." 
+      setSaveFeedback({
+        type: "error",
+        message: err instanceof ApiError ? err.data.detail || "Failed to save job modifications." : "Failed to save job modifications."
       });
+      return false;
     } finally {
       setIsSavingJob(false);
     }
@@ -697,7 +699,7 @@ export default function JobDetailsPage() {
               {job.form_link ? (
                 <div className="bg-[#F1F5F9] border border-[#CBD5E1] rounded-md px-4 py-3 flex items-center justify-between w-full max-w-xl shadow-sm">
                   <span className="text-slate-600 text-sm truncate mr-4">{job.form_link}</span>
-                  <button 
+                  <button
                     onClick={handleCopyLink}
                     className="text-primary hover:text-primary/80 font-bold text-sm flex items-center gap-1 cursor-pointer border-none bg-transparent"
                   >
@@ -710,6 +712,36 @@ export default function JobDetailsPage() {
               ) : (
                 <p className="text-sm text-slate-500 italic">No application form link configured.</p>
               )}
+
+              {/* Webhook URL */}
+              <h3 className="text-lg font-bold text-slate-800 mt-6 mb-3">Webhook URL</h3>
+              <div className="bg-[#F1F5F9] border border-[#CBD5E1] rounded-md px-4 py-3 flex items-center justify-between w-full max-w-xl shadow-sm">
+                <code className="text-slate-600 text-xs font-mono truncate mr-4">
+                  {`https://kuracv-service-207878771603.asia-southeast2.run.app/api/applicants/webhook/${jobId}/`}
+                </code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`https://kuracv-service-207878771603.asia-southeast2.run.app/api/applicants/webhook/${jobId}/`);
+                    setWebhookUrlCopied(true);
+                    setTimeout(() => setWebhookUrlCopied(false), 2000);
+                  }}
+                  className="text-primary hover:text-primary/80 font-bold text-sm flex items-center gap-1 cursor-pointer border-none bg-transparent flex-shrink-0"
+                >
+                  {webhookUrlCopied ? (
+                    <>
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      Copy
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           )}
         </div>
